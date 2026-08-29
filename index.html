@@ -424,6 +424,42 @@ h1{
 .score b{color:var(--encre);font-size:15px}
 .score .cochon{color:var(--alerte);font-weight:800}
 
+/* ─────────────────────────────────────────────────────── INVITER ──
+   Le lien de sa table, pret a coller dans WhatsApp. C'est par la que le jeu
+   voyage : personne n'a de compte, tout se passe par un lien. */
+.invite{
+  margin-top:14px;padding:12px 14px;border-radius:12px;
+  background:rgba(4,38,18,.42);border:1px solid rgba(240,198,75,.30);
+}
+.invite__titre{margin:0 0 9px;font-size:13px;font-weight:800;color:var(--or)}
+.invite__lien{display:flex;gap:7px;flex-wrap:wrap}
+.invite__lien input{
+  flex:1;min-width:180px;font:inherit;font-size:12.5px;padding:9px 11px;border-radius:9px;
+  border:1px solid rgba(255,255,255,.18);background:rgba(4,38,18,.55);color:var(--encre);
+}
+.invite__lien button{
+  font:inherit;font-size:13px;font-weight:800;padding:9px 16px;border-radius:9px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;flex:none;
+}
+.invite__wa{
+  display:inline-block;margin-top:9px;font-size:13px;font-weight:700;
+  padding:9px 15px;border-radius:9px;text-decoration:none;
+  background:#1E7040;color:var(--encre);border:1px solid rgba(255,255,255,.16);
+}
+.invite__note{margin:9px 0 0;font-size:11.5px;color:var(--encre-2)}
+
+.salon__convie{
+  display:flex;flex-direction:column;gap:6px;align-items:flex-start;
+  margin:12px 0;padding:12px;border-radius:12px;
+  background:rgba(240,198,75,.10);border:1px solid rgba(240,198,75,.34);
+  font-size:13px;
+}
+.salon__convie span{color:var(--encre-2);font-size:12px}
+.salon__convie button{
+  font:inherit;font-size:14px;font-weight:800;padding:10px 16px;border-radius:10px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;margin-top:4px;
+}
+
 .regle{
   margin-top:20px;font-size:12.5px;line-height:1.62;color:var(--encre-2);
   background:rgba(4,38,18,.30);border:1px solid rgba(255,255,255,.07);
@@ -622,6 +658,19 @@ h1{
 
   <div class="etat" id="etat">Distribution</div>
 
+  <!-- INVITER. Sans ce bloc, on ne pouvait pas convier quelqu'un : il fallait
+       lui dire d'aller sur le jeu, de choisir « en ligne », et de deviner
+       laquelle des tables ouvertes etait la notre. -->
+  <div class="invite" id="invite" hidden>
+    <p class="invite__titre">Ta table est ouverte. Invite qui tu veux.</p>
+    <div class="invite__lien">
+      <input id="invite-url" type="text" readonly aria-label="Le lien de ta table">
+      <button id="invite-copier" type="button">Copier</button>
+    </div>
+    <a class="invite__wa" id="invite-wa" target="_blank" rel="noopener">Envoyer sur WhatsApp</a>
+    <p class="invite__note">Qui ouvre ce lien tombe directement à ta table.</p>
+  </div>
+
   <div class="actions">
     <button class="boude" id="boude" type="button" disabled>Boudé</button>
     <button id="poser-gauche" type="button" hidden>Poser à gauche</button>
@@ -670,6 +719,12 @@ h1{
         </select>
       </label>
       <button id="salon-ouvrir" type="button">Ouvrir une table</button>
+    </div>
+
+    <div class="salon__convie" id="salon-convie" hidden>
+      <b>On t'attend à une table.</b>
+      <span>Dis ton nom et assieds-toi.</span>
+      <button id="salon-convie-ok" type="button">Rejoindre la table</button>
     </div>
 
     <h3>Les tables ouvertes</h3>
@@ -1691,7 +1746,7 @@ function ouvrirTable(joueurs, variante){
     arbitre.sieges[j].robot = true;
   }
   arbitre.faireJouerLesRobots();
-  ligne = { arbitre: arbitre, ws: null, monSiege: place.siege };
+  ligne = { arbitre: arbitre, ws: null, monSiege: place.siege, id: "locale" };
   fermerSalon();
   rafraichirLigne();
 }
@@ -1703,7 +1758,7 @@ function rejoindreTable(id, joueurs, variante){
     "?nom=" + encodeURIComponent(nom) + "&jeton=" + encodeURIComponent(monJeton()) +
     "&joueurs=" + (joueurs || 3) + "&variante=" + (variante || "chinois");
   var ws = new WebSocket(url);
-  ligne = { arbitre: null, ws: ws, monSiege: -1 };
+  ligne = { arbitre: null, ws: ws, monSiege: -1, id: id };
   fermerSalon();
   dire("Connexion à la table…");
 
@@ -1722,9 +1777,70 @@ function quitterLaTable(){
   if (ligne && ligne.ws) { try { ligne.ws.close(); } catch (e) {} }
   clearTimeout(reveil); reveil = null;
   arreterSablier();
+  var bl = $("#invite"); if (bl) bl.hidden = true;
+  if (location.hash){ try { history.replaceState(null, "", location.pathname); } catch (e) {} }
   ligne = null;
   $("#quitter").hidden = true;
   donneNeuve();                                   /* on retombe sur la table locale */
+}
+
+/* ═══════════════════════════════════════════════════════ INVITER ═══════
+   Personne n'a de compte : une table se partage donc par un LIEN, et rien
+   d'autre. Qui l'ouvre tombe directement a la bonne table, il n'a qu'a dire
+   son nom. Sans cela il fallait expliquer a chacun d'aller sur le jeu, de
+   choisir « en ligne », puis de deviner laquelle des tables etait la notre. */
+
+/* L'ADRESSE PUBLIQUE DU JEU. Le lien d'invitation se batit toujours dessus,
+   jamais sur l'adresse courante : ouvert depuis un fichier local ou depuis un
+   apercu, location.origin ne veut rien dire, et l'on enverrait a ses amis un
+   lien qui ne mene nulle part. On ne prend l'adresse courante que si l'on est
+   deja sur le web, ce qui laisse le jeu deplacable sans y toucher. */
+var ADRESSE = "https://lsqz971.github.io/lsqz-domino/";
+
+function lienDeMaTable(){
+  if (!ligne || !ligne.id || ligne.id === "locale") return null;
+  var base = ADRESSE;
+  if (location.protocol === "http:" || location.protocol === "https:"){
+    base = location.origin + location.pathname;
+  }
+  return base + "#t=" + ligne.id;
+}
+
+function montrerInvitation(vue){
+  var bloc = $("#invite");
+  if (!bloc) return;
+  var lien = lienDeMaTable();
+  /* On n'invite que tant qu'il reste une place : une table pleine n'a plus
+     rien a proposer, et le bloc n'aurait plus qu'a encombrer l'ecran. */
+  if (!lien || !vue || !vue.enAttente){ bloc.hidden = true; return; }
+  bloc.hidden = false;
+  $("#invite-url").value = lien;
+  var assis = 0;
+  for (var i = 0; i < vue.places.length; i++) if (vue.places[i].nom) assis++;
+  var libres = vue.joueurs - assis;
+  bloc.querySelector(".invite__titre").textContent =
+    "Ta table est ouverte. Il reste " + libres + (libres > 1 ? " places." : " place.");
+  var texte = "Viens jouer au domino avec moi, sur L'SQz Domino : " + lien;
+  $("#invite-wa").href = "https://wa.me/?text=" + encodeURIComponent(texte);
+}
+
+/* ─── ON ARRIVE PAR UN LIEN D'INVITATION ────────────────────────────────── */
+function tableInvitee(){
+  var m = (location.hash || "").match(/^#t=([a-z0-9-]{4,40})$/i);
+  return m ? m[1] : null;
+}
+
+/* Au chargement : si l'adresse porte une table, on ouvre le salon sur elle et
+   l'on ne demande plus qu'un nom. */
+function accueillirLInvite(){
+  var id = tableInvitee();
+  if (!id) return false;
+  $("#adversaire").value = "ligne";
+  ouvrirSalon();
+  var convie = $("#salon-convie");
+  if (convie) convie.hidden = false;
+  try { $("#salon-nom").focus(); } catch (e) {}
+  return true;
 }
 
 /* ──────────────────────────────────────── ce que le serveur nous dit ── */
@@ -1812,6 +1928,7 @@ function afficherVue(vue){
   majTitre(vue.joueurs, vue.variante);
 
   $("#quitter").hidden = false;
+  montrerInvitation(vue);
   dessiner();
 
   /* LE CHRONO VAUT SURTOUT EN LIGNE. Hors ligne on attend qui l'on veut ;
@@ -2628,6 +2745,29 @@ function demarrer(){
   $("#salon-ouvrir").addEventListener("click", function(){
     ouvrirTable(parseInt($("#salon-joueurs").value, 10) || 3, $("#salon-variante").value);
   });
+
+  /* ─── INVITER ────────────────────────────────────────────────────────── */
+  $("#invite-copier").addEventListener("click", function(){
+    var champ = $("#invite-url"), bouton = this;
+    champ.select();
+    var fait = function(){
+      bouton.textContent = "Copié !";
+      setTimeout(function(){ bouton.textContent = "Copier"; }, 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(champ.value).then(fait, function(){
+        try { document.execCommand("copy"); fait(); } catch (e) {}
+      });
+    } else {
+      try { document.execCommand("copy"); fait(); } catch (e) {}
+    }
+  });
+
+  /* On m'a envoye un lien de table : je dis mon nom et je m'assois. */
+  $("#salon-convie-ok").addEventListener("click", function(){
+    var id = tableInvitee();
+    if (id) rejoindreTable(id);
+  });
   $("#salon-tables").addEventListener("click", function(e){
     var b = e.target.closest ? e.target.closest("[data-rejoindre]") : null;
     if (b) rejoindreTable(b.getAttribute("data-rejoindre"));
@@ -2648,6 +2788,10 @@ function demarrer(){
   /* la table se redessine quand la fenetre change : l'echelle du serpentin
      depend de la place disponible */
   window.addEventListener("resize", function(){ if (partie) dessinerChaine(); });
+
+  /* ON ARRIVE PEUT-ETRE PAR UN LIEN D'INVITATION. C'est la derniere chose
+     qu'on regarde au demarrage, une fois tous les boutons en place. */
+  accueillirLInvite();
 
   window.addEventListener("message", function(e){
     if (e.origin !== "https://tally.so") return;
