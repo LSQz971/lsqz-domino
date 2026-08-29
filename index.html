@@ -73,11 +73,24 @@ h1{
   border:1px solid rgba(255,255,255,.20)!important;font-weight:600!important;
 }
 
+/* LES REGLAGES FLOTTENT PAR-DESSUS, ILS NE POUSSENT PLUS LA TABLE. Ouverts
+   dans le fil de la page, ils prenaient 450 px sur un telephone : le tapis
+   se reduisait a une bande et les joueurs, la main et la chaine se
+   chevauchaient tous (capture d'un utilisateur, 29/08/2026). */
 .reglages{
-  display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;justify-content:center;
-  padding:7px;border-radius:12px;margin:0;flex:none;
-  background:linear-gradient(180deg,rgba(10,59,29,.55),rgba(10,59,29,.30));
-  border:1px solid rgba(255,255,255,.08);
+  position:fixed;z-index:65;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(94vw,420px);max-height:86vh;overflow:auto;
+  display:flex;flex-direction:column;gap:10px;
+  padding:16px;border-radius:16px;
+  background:linear-gradient(180deg,#12572A,#0A3B1D);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 22px 60px rgba(0,0,0,.62), 0 0 0 100vmax rgba(6,32,16,.72);
+}
+.reglages label{width:100%}
+.reglages select{width:100%}
+.reglages__fermer{
+  font:inherit;font-size:14px;font-weight:800;padding:11px;border-radius:11px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;margin-top:4px;
 }
 .reglages label{display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--encre-2)}
 .reglages__aide{background:transparent!important;color:var(--encre-2)!important;
@@ -101,7 +114,7 @@ h1{
    le jour. On empile donc trois choses : le bois et ses veines, la bande de
    reflet, et un lustre general qui creuse les bords. */
 .meuble{
-  flex:1;min-height:0;
+  flex:1;min-height:210px;
   position:relative;padding:clamp(8px,2vw,16px);border-radius:26px;
   background:
     repeating-linear-gradient(93deg, rgba(30,12,2,.20) 0 1px, transparent 1px 6px),
@@ -677,6 +690,7 @@ h1{
         <option value="30">30 secondes</option>
       </select>
     </label>
+    <button class="reglages__fermer" id="reglages-fermer" type="button">Revenir au jeu</button>
   </div>
 
   <!-- INVITER, AU-DESSUS DE LA TABLE. Il etait sous le tapis, et il fallait
@@ -1463,7 +1477,7 @@ Table.prototype.expirer = function(maintenant){
 
   s.retards = (s.retards || 0) + 1;
   if (s.retards >= 3 && !s.robot){
-    s.robot = true;
+    s.robot = true; s.absent = true; s.annonce = true;
     this.dire(this.nomDe(siege) + " ne répond plus : l'ordinateur prend sa place.");
   }
   this.apresCoup();
@@ -1484,8 +1498,12 @@ Table.prototype.asseoir = function(nom, jeton){
   for (var i = 0; i < this.sieges.length; i++){
     if (this.sieges[i].jeton === jeton){
       if (this.sieges[i].robot){                 /* il revient, il reprend la main */
-        this.sieges[i].robot = false;
-        this.dire(this.sieges[i].nom + " revient à la table.");
+        var s2 = this.sieges[i];
+        s2.robot = false;
+        /* On ne salue son retour que si son absence avait ete annoncee :
+           sinon personne n'a rien vu, et il n'y a rien a dire. */
+        if (s2.annonce) this.dire(s2.nom + " revient à la table.");
+        s2.absent = false; s2.annonce = false;
       }
       return { siege: i };
     }
@@ -1500,11 +1518,20 @@ Table.prototype.asseoir = function(nom, jeton){
 
 /* Quelqu'un s'en va : l'ordinateur prend sa place plutot que de tuer la
    partie pour les autres. C'est ce que fait toute table en ligne serieuse. */
+/* UNE COUPURE BREVE NE SE VOIT PAS. Sur un telephone, changer d'application
+   ou verrouiller l'ecran ferme le WebSocket une seconde, et l'on annoncait
+   aussitot « X a quitte la table : l'ordinateur prend sa place ». Le joueur
+   revenait dans la foulee et lisait qu'il etait parti (rapporte par
+   l'adversaire de Pierre le 29/08/2026).
+   On garde donc sa place en silence : l'ordinateur ne se signale QUE s'il
+   doit reellement jouer a sa place, c'est a dire si l'absent ne revient pas
+   avant son tour. */
 Table.prototype.lever = function(siege){
   var s = this.sieges[siege];
   if (!s || s.robot) return;
   s.robot = true;
-  this.dire(s.nom + " a quitté la table : l'ordinateur prend sa place.");
+  s.absent = true;          /* absent, mais on n'en dit rien pour l'instant */
+  s.annonce = false;
 };
 
 Table.prototype.dire = function(texte){
@@ -1568,6 +1595,12 @@ Table.prototype.faireJouerLesRobots = function(){
   while (this.partie && !this.partie.fini && garde++ < 60){
     var s = this.sieges[this.partie.tour];
     if (!s || !s.robot) break;
+    /* C'est ici, et seulement ici, qu'une absence devient publique : le tour
+       est arrive et il n'est pas revenu. */
+    if (s.absent && !s.annonce){
+      s.annonce = true;
+      this.dire(s.nom + " ne répond pas : l'ordinateur joue pour lui.");
+    }
     var avant = this.partie.plateau.pieces.length;
     var fait = MOTEUR.jouerOrdinateur(this.partie);
     if (fait && fait.boude) this.dire(this.nomDe(this.partie.tour === 0 ? this.joueurs - 1 : this.partie.tour - 1) + " boude.");
@@ -2947,11 +2980,19 @@ function demarrer(){
     ouvrirSalon();
   });
 
+  function fermerReglages(){
+    $("#reglages").hidden = true;
+    $("#voir-reglages").setAttribute("aria-expanded", "false");
+  }
   $("#voir-reglages").addEventListener("click", function(){
     var r = $("#reglages"), ouvert = r.hidden;
     r.hidden = !ouvert;
     this.setAttribute("aria-expanded", ouvert ? "true" : "false");
-    if (partie) dessinerChaine();
+  });
+  $("#reglages-fermer").addEventListener("click", fermerReglages);
+  /* changer un reglage, c'est avoir fini : on rend la table */
+  ["#adversaire", "#joueurs", "#variante"].forEach(function(id){
+    $(id).addEventListener("change", fermerReglages);
   });
 
   $("#voir-regle").addEventListener("click", function(){
@@ -3025,7 +3066,11 @@ function demarrer(){
   $("#duree").addEventListener("change", function(){
     if (partie && !partie.fini && partie.tour === monSiege()) lancerChrono();
   });
-  document.addEventListener("keydown", function(e){ if (e.key === "Escape") fermerFormulaire(); });
+  document.addEventListener("keydown", function(e){
+    if (e.key !== "Escape") return;
+    fermerFormulaire();
+    if (!$("#reglages").hidden) fermerReglages();
+  });
 
   /* la table se redessine quand la fenetre change : l'echelle du serpentin
      depend de la place disponible */
