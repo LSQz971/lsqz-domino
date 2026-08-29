@@ -185,8 +185,20 @@ h1{
    toi, en bas. C'est ce detail, et lui seul, qui fait qu'on est assis a la
    table au lieu de regarder un tableau de bord. */
 .place{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:3}
-.place--gauche{left:8px;top:50%;transform:translateY(-50%)}
-.place--droite{right:8px;top:50%;transform:translateY(-50%)}
+/* LES VOISINS PORTENT LEUR NOM ET LEURS POINTS A COTE DU JETON, contre leur
+   bord, et non dessous : empiles, ils descendaient dans le feutre et la
+   chaine devait les contourner (demande de Pierre, 29/08/2026). */
+.place--gauche{left:6px;top:50%;transform:translateY(-50%);flex-direction:row;align-items:center;gap:5px}
+.place--droite{right:6px;top:50%;transform:translateY(-50%);flex-direction:row-reverse;align-items:center;gap:5px}
+.place--gauche .place__bloc{align-items:flex-start}
+.place--droite .place__bloc{align-items:flex-end}
+.place--gauche .place__nom,.place--droite .place__nom{margin-top:0}
+.place--gauche .place__bloc,.place--droite .place__bloc{
+  max-width:74px;
+}
+.place--gauche .place__nom,.place--droite .place__nom{
+  white-space:normal;line-height:1.15;word-break:break-word;
+}
 .place--haut{left:50%;top:8px;transform:translateX(-50%);flex-direction:row;align-items:flex-start}
 .place--haut .place__dos{flex-direction:row}
 .place--haut .place__bloc{align-items:flex-start}
@@ -340,7 +352,12 @@ h1{
   transition:top .2s;
   display:flex;align-items:center;justify-content:center;
 }
-.chaine{position:relative;transform-origin:center center}
+/* flex:none EST INDISPENSABLE. L'aire est un conteneur flex, et sans cela la
+   chaine se laissait comprimer : elle annoncait 468 px de large, en occupait
+   393, et les pieces posees en absolu debordaient de leur propre boite pour
+   aller sous les joueurs. C'est la vraie cause du chevauchement constate par
+   Pierre le 29/08/2026, et aucune marge n'aurait pu la corriger. */
+.chaine{position:relative;transform-origin:center center;flex:none}
 .chaine__vide{
   color:rgba(255,255,255,.46);font-size:13px;font-style:italic;text-align:center;
   white-space:nowrap;
@@ -1700,6 +1717,15 @@ var ligne = null;      /* { arbitre, ws, monSiege, vue } quand on est a une tabl
 
 function enLigne(){ return !!ligne; }
 
+/* LE LIEN EST-IL VIVANT ? Hors ligne, oui, toujours. En ligne, seulement si
+   le socket est reellement ouvert : c'est ce qui empeche de croire qu'on
+   peut jouer alors que rien ne partira. */
+function lienVivant(){
+  if (!ligne) return true;                       /* table locale */
+  if (ligne.arbitre) return true;                /* arbitre dans la page */
+  return !!(ligne.ws && ligne.ws.readyState === 1);
+}
+
 /* La table en ligne s'expose, comme le moteur et le dessin : c'est ce qui
    permet de la verifier depuis le navigateur sans rien deviner. */
 if (typeof window !== "undefined"){
@@ -2075,7 +2101,19 @@ function afficherVue(vue){
 
 function envoyerEnLigne(message){
   if (!ligne) return;
-  if (ligne.ws){ try { ligne.ws.send(JSON.stringify(message)); } catch (e) {} return; }
+  if (ligne.ws){
+    /* Un envoi qui echoue ne doit plus disparaitre sans un mot : on le dit,
+       et l'on rappelle la table au lieu de laisser le joueur cliquer dans
+       le vide. */
+    if (ligne.ws.readyState !== 1){
+      dire("Connexion perdue. On te remet à ta place…");
+      reprendre();
+      return;
+    }
+    try { ligne.ws.send(JSON.stringify(message)); }
+    catch (e){ dire("Connexion perdue. On te remet à ta place…"); reprendre(); }
+    return;
+  }
   /* arbitre local : on l'appelle directement, c'est le meme code */
   var a = ligne.arbitre, r = null;
   if (message.t === "jouer")         r = a.jouer(ligne.monSiege, message.i, message.cote);
@@ -2316,8 +2354,45 @@ function indexDernierPose(){
   return -1;
 }
 
+/* LA CHAINE NE DOIT JAMAIS PASSER SOUS UN JOUEUR. Les marges de l'aire
+   etaient FIXES a 64 px, alors qu'une place grandit en cours de partie : en
+   fin de donne elle ouvre ses dominos, et un nom comme « Pete_Roupite » suivi
+   de « 18 points » est bien plus large que ca. La chaine passait alors
+   dessous (constate par Pierre le 29/08/2026, table a trois en ligne). On
+   mesure donc les places REELLES avant chaque dessin. */
+function reglerLAire(){
+  var aire = $(".aire"), tapis = $(".tapis");
+  if (!aire || !tapis) return;
+  var boite = tapis.getBoundingClientRect();
+  var marge = { gauche: 8, droite: 8, haut: 8, bas: 8 };
+  var cotes = [["gauche","#siege-gauche"], ["droite","#siege-droite"],
+               ["haut","#siege-haut"], ["bas","#siege-bas"]];
+  for (var i = 0; i < cotes.length; i++){
+    var el = $(cotes[i][1]);
+    if (!el || el.hidden) continue;
+    var r = el.getBoundingClientRect();
+    if (cotes[i][0] === "gauche")      marge.gauche = Math.max(marge.gauche, r.right - boite.left + 6);
+    else if (cotes[i][0] === "droite") marge.droite = Math.max(marge.droite, boite.right - r.left + 6);
+    else if (cotes[i][0] === "haut")   marge.haut   = Math.max(marge.haut,   r.bottom - boite.top + 6);
+    else                                marge.bas    = Math.max(marge.bas,    boite.bottom - r.top + 6);
+  }
+  /* la main s'etale en bas : elle compte comme une place */
+  var main = $("#main");
+  if (main){
+    var rm = main.getBoundingClientRect();
+    marge.bas = Math.max(marge.bas, boite.bottom - rm.top + 6);
+  }
+  /* on ne se laisse jamais etrangler : au pire la moitie du tapis reste au jeu */
+  var maxH = boite.width * 0.3, maxV = boite.height * 0.3;
+  aire.style.left   = Math.min(marge.gauche, maxH) + "px";
+  aire.style.right  = Math.min(marge.droite, maxH) + "px";
+  aire.style.top    = Math.min(marge.haut,   maxV) + "px";
+  aire.style.bottom = Math.min(marge.bas,    maxV) + "px";
+}
+
 function dessinerChaine(){
   var c = $("#chaine"), aire = $(".aire");
+  reglerLAire();
   reglerLimite(aire.clientWidth || 320);
   var poses = disposerChaine(partie.plateau);
 
@@ -2366,7 +2441,12 @@ function dessinerMain(){
   if (partie.tour === monSiege() && !partie.fini){
     for (var k = 0; k < coups.length; k++) jouables[coups[k].i] = true;
   }
-  var monTour = partie.tour === monSiege() && !partie.fini;
+  /* LIEN COUPE, RIEN N'EST JOUABLE. Les pieces restaient cerclees d'or, le
+     joueur cliquait, et rien ne se passait : l'envoi echouait en silence
+     dans un socket ferme. Constate par Pierre le 29/08/2026, « il peut
+     jouer mais n'arrive pas a jouer ». */
+  if (!lienVivant()) jouables = {};
+  var monTour = partie.tour === monSiege() && !partie.fini && lienVivant();
   var html = "";
   for (var i = 0; i < main.length; i++){
     var cl = "d d--main d--debout" +
@@ -2543,8 +2623,10 @@ function dessinerPioche(){
 }
 
 function dessiner(){
-  dessinerChaine(); dessinerMain(); dessinerPlaces(); dessinerScore();
-  dessinerPioche(); majBoutons();
+  /* Les places et la main D'ABORD : c'est sur elles qu'on mesure l'aire, et
+     les mesurer avant de les avoir dessinees donnait la taille d'avant. */
+  dessinerMain(); dessinerPlaces(); dessinerScore(); dessinerPioche();
+  dessinerChaine(); majBoutons();
 }
 
 /* ───────────────────────────────────────────────────────── les boutons ── */
@@ -2552,7 +2634,7 @@ function monSiege(){ return (ligne && ligne.monSiege >= 0) ? ligne.monSiege : 0;
 
 function majBoutons(){
   var moi = monSiege();
-  var monTour = partie.tour === moi && !partie.fini && !occupe;
+  var monTour = partie.tour === moi && !partie.fini && !occupe && lienVivant();
   var coups = monTour ? MOTEUR.coupsPossibles(partie.mains[moi], partie.plateau) : [];
   $("#boude").disabled = !(monTour && coups.length === 0);
 
@@ -2584,6 +2666,7 @@ function murmurer(joueur, mot){
 /* ─────────────────────────────────────────────────── le tour du joueur ── */
 function toucher(i){
   if (partie.fini || partie.tour !== monSiege() || occupe) return;
+  if (!lienVivant()){ dire("Connexion perdue. On te remet à ta place…"); return; }
   var coups = MOTEUR.coupsPossibles(partie.mains[monSiege()], partie.plateau);
   var mesCotes = [];
   for (var k = 0; k < coups.length; k++) if (coups[k].i === i) mesCotes.push(coups[k].cote);
