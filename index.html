@@ -1781,14 +1781,24 @@ function exigerLeNom(){
   if (note) note.textContent = "Il faut un nom pour t'asseoir à la table.";
   return null;
 }
+/* LE JETON NE CHANGE JAMAIS PENDANT UNE VISITE. C'est lui qui dit au serveur
+   « c'est moi qui reviens » : sans lui, un joueur qui perd le reseau se
+   rassoit comme un inconnu, sur une autre place, et sa main est perdue.
+   Il etait relu dans localStorage a CHAQUE appel, et invente a neuf des que
+   le stockage etait indisponible : navigation privee, cookies bloques, ou
+   simplement une page ouverte autrement qu'en http. On le tient donc en
+   memoire pour toute la visite, et le stockage ne sert plus qu'a le
+   retrouver d'une fois sur l'autre. */
+var JETON = null;
+
 function monJeton(){
-  var j;
-  try { j = localStorage.getItem("lsqz-domino-jeton"); } catch (e) {}
-  if (!j){
-    j = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    try { localStorage.setItem("lsqz-domino-jeton", j); } catch (e) {}
+  if (JETON) return JETON;
+  try { JETON = localStorage.getItem("lsqz-domino-jeton"); } catch (e) {}
+  if (!JETON){
+    JETON = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    try { localStorage.setItem("lsqz-domino-jeton", JETON); } catch (e) {}
   }
-  return j;
+  return JETON;
 }
 
 function ouvrirTable(joueurs, variante){
@@ -1818,16 +1828,33 @@ function ouvrirTable(joueurs, variante){
   rafraichirLigne();
 }
 
+/* ON SE RECONNECTE TOUT SEUL. Le serveur garde la place et la main de qui
+   s'absente : verifie le 29/08/2026, un joueur coupe puis revenu retrouve son
+   siege et ses sept dominos a l'identique. Mais l'ecran, lui, disait « la
+   table s'est refermee » et attendait. Sur un telephone qui perd le reseau
+   trois secondes en changeant d'application, cela suffisait a perdre la
+   partie. On rappelle donc la table, de plus en plus espace, jusqu'a dix
+   fois, et l'on repart des que le reseau revient. */
+var essais = 0, rappel = null;
+
 function rejoindreTable(id, joueurs, variante){
   var nom = exigerLeNom();
   if (!nom) return;
+  connecter(id, nom, joueurs, variante);
+}
+
+function connecter(id, nom, joueurs, variante){
+  clearTimeout(rappel); rappel = null;
   var url = SERVEUR.replace(/^http/, "ws") + "/table/" + id +
     "?nom=" + encodeURIComponent(nom) + "&jeton=" + encodeURIComponent(monJeton()) +
     "&joueurs=" + (joueurs || 3) + "&variante=" + (variante || "chinois");
   var ws = new WebSocket(url);
-  ligne = { arbitre: null, ws: ws, monSiege: -1, id: id };
+  ligne = { arbitre: null, ws: ws, monSiege: -1, id: id,
+            nom: nom, joueurs: joueurs, variante: variante, parti: false };
   fermerSalon();
-  dire("Connexion à la table…");
+  dire(essais ? "On te remet à ta place…" : "Connexion à la table…");
+
+  ws.onopen = function(){ essais = 0; };
 
   ws.onmessage = function(ev){
     var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -1836,11 +1863,44 @@ function rejoindreTable(id, joueurs, variante){
     if (m.t === "erreur") dire(m.texte);
     if (m.t === "etat")   afficherVue(m.vue);
   };
-  ws.onclose = function(){ if (ligne) dire("La table s'est refermée."); };
-  ws.onerror = function(){ dire("Le serveur ne répond pas."); };
+
+  ws.onclose = function(){
+    if (!ligne || ligne.parti) return;          /* on est parti de son plein gre */
+    reprendre();
+  };
+  ws.onerror = function(){ /* onclose suit toujours : on le laisse decider */ };
+}
+
+/* On rappelle la table, de plus en plus espace, sans jamais harceler. */
+function reprendre(){
+  if (!ligne || ligne.parti) return;
+  var lu = ligne;
+  if (essais >= 10){
+    dire("La table ne répond plus. Reviens par ton lien quand tu veux.");
+    return;
+  }
+  var attente = Math.min(8000, 800 * Math.pow(2, essais));
+  essais++;
+  dire("Connexion perdue. On te remet à ta place… (" + essais + ")");
+  clearTimeout(rappel);
+  rappel = setTimeout(function(){
+    connecter(lu.id, lu.nom, lu.joueurs, lu.variante);
+  }, attente);
+}
+
+/* Le reseau revient : on ne fait pas attendre le joueur jusqu'au prochain
+   rappel, on retente aussitot. */
+if (typeof window !== "undefined"){
+  window.addEventListener("online", function(){
+    if (ligne && ligne.ws && ligne.ws.readyState !== 1 && !ligne.parti){
+      essais = 0; reprendre();
+    }
+  });
 }
 
 function quitterLaTable(){
+  if (ligne) ligne.parti = true;                /* depart voulu : on ne rappelle pas */
+  clearTimeout(rappel); rappel = null; essais = 0;
   if (ligne && ligne.ws) { try { ligne.ws.close(); } catch (e) {} }
   clearTimeout(reveil); reveil = null;
   arreterSablier();
