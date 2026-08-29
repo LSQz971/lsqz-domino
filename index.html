@@ -610,6 +610,10 @@ h1{
 }
 .score b{color:var(--encre);font-size:15px}
 .score .cochon{color:var(--alerte);font-weight:800}
+/* Ou en est le match en ligne : cinq donnes, et le dernier est super cochon. */
+.score__match{color:var(--or);font-weight:700}
+/* SUPER COCHON : le mot est plus long, il lui faut de la place. */
+.verdict--honte .verdict__mot{word-break:break-word}
 
 /* ─────────────────────────────────────────────────────── INVITER ──
    Le lien de sa table, pret a coller dans WhatsApp. C'est par la que le jeu
@@ -1587,6 +1591,14 @@ function Table(options){
   this.journal = [];                /* ce que la table a dit, pour le chat de partie */
   this.finie = false;
 
+  /* LE MATCH EN LIGNE SE JOUE EN CINQ DONNES, et le dernier est SUPER COCHON
+     (regle posee par Pierre le 29/08/2026). Sans but, une table en ligne
+     n'avait aucune raison de s'arreter : on jouait jusqu'a ce que quelqu'un
+     s'en aille. Le cochon, trois donnes d'affilee, reste et coupe court. */
+  this.donnesMax = o.donnesMax || 5;
+  this.donnes = 0;
+  this.superCochon = null;          /* les camps derniers a la fin du match */
+
   /* LE DELAI DE COUP. Sans lui, un joueur qui ferme son telephone bloque la
      table pour tout le monde, indefiniment : personne d'autre ne peut jouer,
      et la partie ne se termine jamais. C'est le trou qu'avait notre premiere
@@ -1778,10 +1790,26 @@ Table.prototype.clore = function(){
   else if (r.nul) this.dire("Le jeu est mort, la donne est chirée.");
   else this.dire("Le jeu est mort, " + (this.partie.equipes ? "une équipe" : this.nomDe(r.gagnant)) + " l'emporte aux points.");
 
+  this.donnes++;
+
   /* Trois donnes gagnees d'affilee et la table est prise : c'est cochon. */
   if (this.serie >= 3){
     this.finie = true;
     this.dire("Trois d'affilée : la table est prise, cochon !");
+    return;
+  }
+
+  /* CINQ DONNES ET LE MATCH EST JOUE. Celui qui en a gagne le moins est
+     SUPER COCHON. Plusieurs derniers a egalite le sont tous : on ne
+     departage pas ce que la table n'a pas departage. */
+  if (this.donnes >= this.donnesMax){
+    this.finie = true;
+    var camps = this.partie && this.partie.equipes ? 2 : this.joueurs;
+    var mini = Infinity, c;
+    for (c = 0; c < camps; c++) mini = Math.min(mini, this.score[c] || 0);
+    this.superCochon = [];
+    for (c = 0; c < camps; c++) if ((this.score[c] || 0) === mini) this.superCochon.push(c);
+    this.dire("Cinq donnes jouées, le match est fini.");
   }
 };
 
@@ -1814,6 +1842,9 @@ Table.prototype.etatPour = function(siege){
     serie: this.serie,
     meneur: this.meneur,
     finie: this.finie,
+    donnes: this.donnes,
+    donnesMax: this.donnesMax,
+    superCochon: this.superCochon,
     journal: this.journal.slice(-8),
     enAttente: !this.complete()
   };
@@ -2776,6 +2807,15 @@ function dessinerScore(){
       html += '<span>' + nomDeLaPlace(j) + ' <b>' + (s.score[j] || 0) + '</b></span>';
     }
   }
+  /* OU EN EST LE MATCH. Un but sans compteur n'est pas un but : on dit a
+     chaque instant combien de donnes sont jouees sur les cinq. */
+  var vueM = enLigne() ? LIGNE.vue() : null;
+  if (vueM && vueM.donnesMax){
+    html += '<span class="score__match">Donne <b>' +
+            Math.min(vueM.donnes + (vueM.fini ? 0 : 1), vueM.donnesMax) +
+            '</b> sur ' + vueM.donnesMax + '</span>';
+  }
+
   if (s.meneur >= 0 && s.serie > 0){
     var pluriel = partie.equipes;
     var qui = pluriel ? (s.meneur === 0 ? "Vous deux" : "Eux") : nomDeLaPlace(s.meneur);
@@ -2919,6 +2959,33 @@ function verdictDeLaDonne(){
   if (r.nul){
     return { ton: "nul", mot: "Chiré",
              detail: "Le jeu est mort et personne ne l'emporte. (" + r.points.join(" / ") + " points)" };
+  }
+
+  /* LE MATCH EN LIGNE EST JOUE : cinq donnes, et le dernier est SUPER COCHON.
+     C'est le but que Pierre a voulu donner aux tables en ligne, et c'est le
+     seul moment ou le mot sort en entier. */
+  if (vue && vue.finie && vue.superCochon && vue.superCochon.length){
+    var jeSuisCochon = vue.superCochon.indexOf(monCamp) >= 0;
+    var meilleurs = [], mieux = -1, c;
+    for (c = 0; c < vue.score.length; c++){
+      if ((vue.score[c] || 0) > mieux){ mieux = vue.score[c] || 0; meilleurs = [c]; }
+      else if ((vue.score[c] || 0) === mieux) meilleurs.push(c);
+    }
+    var nomDuCamp = function(k){
+      if (!partie.equipes) return nomDeLaPlace(k);
+      return k === 0 ? "vous deux" : "eux";
+    };
+    if (jeSuisCochon) return { ton: "honte", mot: "Super cochon !",
+      detail: "Cinq donnes, et tu finis dernier avec " +
+              (vue.score[monCamp] || 0) + " donne" + ((vue.score[monCamp] || 0) > 1 ? "s" : "") +
+              " gagnée" + ((vue.score[monCamp] || 0) > 1 ? "s" : "") + ". " +
+              (meilleurs.length === 1 ? nomDuCamp(meilleurs[0]) + " remporte le match."
+                                      : "Personne ne domine, mais toi tu fermes la marche.") };
+    return { ton: "gloire", mot: "Match gagné",
+      detail: "Cinq donnes jouées. Tu finis devant avec " +
+              (vue.score[monCamp] || 0) + " donne" + ((vue.score[monCamp] || 0) > 1 ? "s" : "") +
+              ". Super cochon pour " +
+              vue.superCochon.map(nomDuCamp).join(" et ") + "." };
   }
 
   /* LA TABLE PRISE, trois donnes d'affilee : c'est le sommet, dans un sens
