@@ -459,6 +459,118 @@ h1{
 .d--jouable:active{transform:translateY(1px)}
 .d--choisi{outline:3px solid var(--alerte);outline-offset:1px}
 
+/* ═══════════════════════════════════════════════════════ LE VERDICT ═══════
+   Une donne qui se termine ne doit pas s'eteindre en une ligne sous la table.
+   COCHON doit faire honte, DOMINO doit rendre fier : c'est le sel du jeu, et
+   c'est aussi ce qui donne envie de partager. */
+.verdict{
+  position:absolute;inset:0;z-index:9;
+  display:flex;align-items:center;justify-content:center;padding:14px;
+  background:radial-gradient(ellipse at 50% 45%, rgba(4,30,14,.72) 0%, rgba(3,22,10,.90) 100%);
+  animation:verdictFond .28s ease-out;
+}
+@keyframes verdictFond{from{opacity:0}to{opacity:1}}
+
+.verdict__boite{
+  text-align:center;max-width:92%;
+  animation:verdictBoite .42s cubic-bezier(.16,1.2,.3,1);
+}
+@keyframes verdictBoite{
+  from{opacity:0;transform:scale(.72) translateY(14px)}
+  to{opacity:1;transform:none}
+}
+
+.verdict__mot{
+  font-size:clamp(34px,11vw,74px);font-weight:900;line-height:1;
+  letter-spacing:.02em;text-transform:uppercase;
+  color:var(--or);
+  text-shadow:0 2px 0 rgba(0,0,0,.55), 0 0 26px rgba(240,198,75,.42);
+}
+/* LA HONTE. Rouge, et le mot tremble : on ne se fait pas mettre cochon dans
+   l'indifference. */
+.verdict--honte .verdict__mot{
+  color:#FF5B4E;
+  text-shadow:0 2px 0 rgba(0,0,0,.6), 0 0 26px rgba(228,35,28,.5);
+  animation:honte .5s ease-in-out .18s 2;
+}
+@keyframes honte{
+  0%,100%{transform:translateX(0) rotate(0)}
+  20%{transform:translateX(-7px) rotate(-1.4deg)}
+  50%{transform:translateX(7px) rotate(1.4deg)}
+  80%{transform:translateX(-4px) rotate(-.7deg)}
+}
+.verdict--nul .verdict__mot{color:var(--encre-2);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+
+.verdict__detail{
+  margin:12px 0 0;font-size:clamp(13px,3.6vw,16px);font-weight:700;
+  color:var(--encre);line-height:1.45;
+  text-shadow:0 1px 4px rgba(0,0,0,.75);
+}
+.verdict__compte{
+  margin:16px auto 0;max-width:320px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.verdict__ligne{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 11px;border-radius:9px;
+  background:rgba(4,38,18,.5);border:1px solid rgba(255,255,255,.09);
+  font-size:13px;
+}
+.verdict__ligne b{flex:1;text-align:left;font-weight:700;color:var(--encre);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.verdict__pts{font-weight:900;color:var(--encre);min-width:62px;text-align:right}
+.verdict__tot{color:var(--encre-2);font-size:11px;min-width:58px;text-align:right}
+/* Le gagnant a son halo, comme chez eux. */
+.verdict__ligne--gagne{
+  background:rgba(240,198,75,.16);border-color:rgba(240,198,75,.55);
+  box-shadow:0 0 0 2px rgba(240,198,75,.18);
+}
+.verdict__ligne--gagne b,.verdict__ligne--gagne .verdict__pts{color:var(--or)}
+.verdict__ligne--moi b::after{content:" (toi)";opacity:.6;font-weight:600}
+
+@media (max-height:520px){
+  .verdict__compte{margin-top:9px;gap:3px}
+  .verdict__ligne{padding:4px 9px;font-size:12px}
+}
+
+/* Le tableau des donnes, un joueur par ligne, les points de chaque donne
+   puis le total. Une partie entiere se lit d'un coup d'oeil. */
+.verdict__histo{margin-top:12px;display:flex;flex-direction:column;gap:3px}
+.verdict__histoLigne{
+  display:flex;align-items:center;gap:5px;font-size:11px;
+  padding:5px 9px;border-radius:8px;background:rgba(4,38,18,.42);
+  border:1px solid rgba(255,255,255,.07);
+}
+.verdict__histoLigne b{
+  flex:1;text-align:left;font-weight:700;color:var(--encre-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
+}
+.verdict__histoLigne span{
+  min-width:20px;text-align:center;color:var(--encre-2);
+  font-variant-numeric:tabular-nums;
+}
+.verdict__histoTot{
+  font-weight:900;color:var(--encre)!important;min-width:30px!important;
+  border-left:1px solid rgba(255,255,255,.16);padding-left:7px;margin-left:3px;
+}
+.verdict__histoLigne--moi b{color:var(--or)}
+
+.verdict__actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.verdict__actions button{
+  font:inherit;font-size:14px;font-weight:800;padding:12px 20px;border-radius:11px;
+  border:0;cursor:pointer;
+}
+.verdict__suite{background:var(--or);color:#2A1D00}
+.verdict__partager{background:#25D366;color:#06331A;box-shadow:0 3px 10px rgba(0,0,0,.34)}
+.verdict__actions button:active{transform:translateY(1px)}
+
+@media (max-height:520px){
+  .verdict__mot{font-size:clamp(26px,7vw,44px)}
+  .verdict__detail{font-size:12px;margin-top:7px}
+  .verdict__actions{margin-top:10px}
+  .verdict__actions button{padding:9px 15px;font-size:13px}
+}
+
 /* ──────────────────────────────────────────────────── l'etat et la main ── */
 .etat{
   text-align:center;font-weight:700;margin:0;min-height:20px;flex:none;
@@ -783,6 +895,24 @@ h1{
     </div>
 
     <div class="main" id="main" role="list" aria-label="Ta main"></div>
+
+    <!-- LE VERDICT. Une donne qui se termine doit se VOIR : la honte quand on
+         est cochon, la fierte quand on gagne. Ecrit en petit sous la table,
+         personne ne le lisait. -->
+    <div class="verdict" id="verdict" hidden role="status" aria-live="polite">
+      <div class="verdict__boite">
+        <div class="verdict__mot" id="verdict-mot"></div>
+        <p class="verdict__detail" id="verdict-detail"></p>
+        <!-- LE RECAPITULATIF, pris chez Ludicash : chacun avec les points qui
+             lui restaient et son total. C'est lui qui rend la honte concrete,
+             tes dix-huit points ecrits a cote du zero du gagnant. -->
+        <div class="verdict__compte" id="verdict-compte"></div>
+        <div class="verdict__actions">
+          <button class="verdict__partager" id="verdict-partager" type="button" hidden>Partager ma victoire</button>
+          <button class="verdict__suite" id="verdict-suite" type="button">Donne suivante</button>
+        </div>
+      </div>
+    </div>
   </div>
   </div>
 
@@ -1885,6 +2015,7 @@ function monJeton(){
 
 function ouvrirTable(joueurs, variante){
   if (!exigerLeNom()) return;
+  couperLaPrecedente();
   if (SERVEUR){
     fetch(SERVEUR + "/creer", {
       method: "POST",
@@ -1905,7 +2036,8 @@ function ouvrirTable(joueurs, variante){
     arbitre.sieges[j].robot = true;
   }
   arbitre.faireJouerLesRobots();
-  ligne = { arbitre: arbitre, ws: null, monSiege: place.siege, id: "locale" };
+  couperLaPrecedente();
+  ligne = { arbitre: arbitre, ws: null, monSiege: place.siege, id: "locale", parti: false };
   fermerSalon();
   rafraichirLigne();
 }
@@ -1925,7 +2057,23 @@ function rejoindreTable(id, joueurs, variante){
   connecter(id, nom, joueurs, variante);
 }
 
+/* ON NE S'ASSOIT JAMAIS A DEUX TABLES A LA FOIS. Ouvrir une seconde table
+   sans fermer la premiere laissait l'ancien serveur continuer d'envoyer son
+   etat : les deux parties se dessinaient l'une sur l'autre, et le joueur ne
+   savait plus laquelle il jouait (rapporte par un joueur de Pierre le
+   29/08/2026). On coupe donc l'ancienne AVANT d'ouvrir la nouvelle, et l'on
+   ignore tout ce qui vient d'un socket qui n'est plus le bon. */
+function couperLaPrecedente(){
+  if (!ligne) return;
+  ligne.parti = true;                       /* son onclose ne rappellera pas */
+  if (ligne.ws){ try { ligne.ws.close(); } catch (e) {} }
+  clearTimeout(rappel); rappel = null;
+  clearTimeout(reveil); reveil = null;
+  arreterSablier();
+}
+
 function connecter(id, nom, joueurs, variante){
+  couperLaPrecedente();
   clearTimeout(rappel); rappel = null;
   var url = SERVEUR.replace(/^http/, "ws") + "/table/" + id +
     "?nom=" + encodeURIComponent(nom) + "&jeton=" + encodeURIComponent(monJeton()) +
@@ -1939,6 +2087,7 @@ function connecter(id, nom, joueurs, variante){
   ws.onopen = function(){ essais = 0; };
 
   ws.onmessage = function(ev){
+    if (!ligne || ligne.ws !== ws) return;     /* une table qu'on a quittee se tait */
     var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
     if (m.t === "place")  ligne.monSiege = m.siege;
     if (m.t === "refus")  { dire(m.raison); quitterLaTable(); }
@@ -1947,7 +2096,7 @@ function connecter(id, nom, joueurs, variante){
   };
 
   ws.onclose = function(){
-    if (!ligne || ligne.parti) return;          /* on est parti de son plein gre */
+    if (!ligne || ligne.parti || ligne.ws !== ws) return;   /* plus la table du moment */
     reprendre();
   };
   ws.onerror = function(){ /* onclose suit toujours : on le laisse decider */ };
@@ -2148,7 +2297,12 @@ function afficherVue(vue){
   /* Et le compteur de la table, visible par TOUT LE MONDE sous le joueur au
      trait : c'est lui qui explique pourquoi un domino part tout seul. */
   lancerSablier();
-  if (vue.journal && vue.journal.length && !vue.enAttente) dire(vue.journal[vue.journal.length - 1]);
+  /* Le verdict dit deja tout, en grand : la derniere ligne du journal
+     repeterait la meme chose sous la table. On se tait tant qu'il est la. */
+  var verdictOuvert = $("#verdict") && !$("#verdict").hidden;
+  if (vue.journal && vue.journal.length && !vue.enAttente && !verdictOuvert){
+    dire(vue.journal[vue.journal.length - 1]);
+  }
   if (vue.fini && !vue.finie) $("#rejouer").textContent = "Donne suivante";
   else $("#rejouer").textContent = "Nouvelle partie";
 }
@@ -2228,6 +2382,10 @@ if (!etat.tables) etat.tables = {};
 function tableCourante(){
   var cle = clefScore();
   if (!etat.tables[cle]) etat.tables[cle] = { score: [0,0,0,0], serie: 0, meneur: -1 };
+  /* L'HISTORIQUE DES DONNES, pris chez Ludicash : leur ecran de fin affiche
+     « Manche 1 : 0, Manche 2 : 0, ... TOTAL 30 », toutes les manches et pas
+     seulement la derniere. Sans lui, la victoire finale n'a pas de recit. */
+  if (!etat.tables[cle].donnes) etat.tables[cle].donnes = [];
   return etat.tables[cle];
 }
 
@@ -2741,16 +2899,156 @@ function texteDeVictoire(){
   return phrase + "\n\nAu " + nomTable + ", sur L'SQz Domino.\n" + adressePublique();
 }
 
+/* ═══════════════════════════════════════════════════════ LE VERDICT ═══════
+   Ce que la donne a donne, en gros, sur le feutre. Pierre le 29/08/2026 :
+   « ca doit faire HONTE a la personne, il faut que ca apparaisse bien en
+   evidence, pareil quand on gagne ». Le texte dit toujours la verite : on
+   n'invente pas un cochon qui n'a pas eu lieu. */
+/* « 1 points » se voit tout de suite et fait amateur. */
+function pts(n){ return n + (n > 1 ? " points" : " point"); }
+
+function verdictDeLaDonne(){
+  if (!partie || !partie.fini || !partie.resultat) return null;
+  var r = partie.resultat, moi = monSiege();
+  var monCamp = partie.equipes ? (moi % 2) : moi;
+  var camp = partie.equipes ? r.equipe : r.gagnant;
+  var vue = enLigne() ? LIGNE.vue() : null;
+  var serie = vue ? vue.serie : tableCourante().serie;
+  var jeGagne = (camp !== null && camp !== undefined && camp === monCamp);
+
+  if (r.nul){
+    return { ton: "nul", mot: "Chiré",
+             detail: "Le jeu est mort et personne ne l'emporte. (" + r.points.join(" / ") + " points)" };
+  }
+
+  /* LA TABLE PRISE, trois donnes d'affilee : c'est le sommet, dans un sens
+     comme dans l'autre. */
+  if (serie >= 3){
+    if (jeGagne) return { ton: "gloire", mot: "Cochon !",
+      detail: partie.equipes
+        ? "Trois d'affilée avec ton partenaire. La table est à vous."
+        : "Trois d'affilée. La table est à toi." };
+    return { ton: "honte", mot: "Cochon !",
+      detail: (partie.equipes ? "Ils ont gagné" : nomDeLaPlace(camp) + " a gagné") +
+              " trois donnes d'affilée. La table lui appartient." };
+  }
+
+  if (r.cause === "main-vide"){
+    if (jeGagne){
+      if (r.gagnant === moi) return { ton: "gloire", mot: "Domino !",
+        detail: partie.equipes
+          ? "Tu as posé ton dernier domino. Avec ton partenaire, vous les mettez cochon."
+          : "Tu as posé ton dernier domino. Tu les mets cochon." };
+      return { ton: "gloire", mot: "Domino !",
+        detail: nomDeLaPlace(r.gagnant) + " a posé son dernier domino. Ton camp l'emporte." };
+    }
+    return { ton: "honte", mot: "Cochon !",
+      detail: nomDeLaPlace(r.gagnant) + " a posé son dernier domino. Tu restes avec " +
+              pts(MOTEUR.pointsMain(partie.mains[moi])) + " dans la main." };
+  }
+
+  /* Jeu mort, aux points. */
+  var points = r.scores || r.points;
+  var autres = [];
+  for (var k = 0; k < points.length; k++) if (k !== camp) autres.push(points[k]);
+  if (jeGagne) return { ton: "gloire", mot: "Gagné",
+    detail: "Le jeu est mort. " + (partie.equipes ? "Vous l'emportez" : "Tu l'emportes") +
+            " aux points, " + points[camp] + " contre " + autres.join(" et ") + "." };
+  return { ton: "honte", mot: "Perdu",
+    detail: "Le jeu est mort. " + (partie.equipes ? "Ils l'emportent" : nomDeLaPlace(camp) + " l'emporte") +
+            " avec " + pts(points[camp]) + ", toi tu en gardes " +
+            points[monCamp] + "." };
+}
+
+/* LE RECAPITULATIF, un joueur par ligne : ce qui lui restait en main, et son
+   total de donnes gagnees. Releve chez Ludicash le 29/08/2026, ou la fin de
+   manche affiche « Nom, Manche 1 : 7, TOTAL 7 ». */
+/* L'HISTORIQUE, quand la table est prise. C'est le moment ou l'on raconte la
+   partie entiere, comme leur tableau manche par manche. */
+function historiqueDeLaTable(){
+  var t = tableCourante();
+  var donnes = (enLigne() ? null : t.donnes) || [];
+  if (donnes.length < 2) return "";
+  var moi = monSiege(), html = "", j, d;
+  var totaux = [];
+  for (j = 0; j < partie.joueurs; j++) totaux.push(0);
+  for (d = 0; d < donnes.length; d++)
+    for (j = 0; j < partie.joueurs; j++) totaux[j] += (donnes[d][j] || 0);
+
+  html += '<div class="verdict__histo">';
+  for (j = 0; j < partie.joueurs; j++){
+    var cases = "";
+    for (d = 0; d < donnes.length; d++)
+      cases += '<span>' + (donnes[d][j] || 0) + '</span>';
+    html += '<div class="verdict__histoLigne' + (j === moi ? " verdict__histoLigne--moi" : "") + '">' +
+            '<b>' + nomDeLaPlace(j) + '</b>' + cases +
+            '<span class="verdict__histoTot">' + totaux[j] + '</span></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function compteDeLaDonne(){
+  if (!partie || !partie.fini || !partie.resultat) return "";
+  var r = partie.resultat, moi = monSiege();
+  var camp = partie.equipes ? r.equipe : r.gagnant;
+  var vue = enLigne() ? LIGNE.vue() : null;
+  var score = vue ? vue.score : tableCourante().score;
+  var html = "";
+  for (var j = 0; j < partie.joueurs; j++){
+    var monCampJ = partie.equipes ? (j % 2) : j;
+    var gagne = (camp !== null && camp !== undefined && monCampJ === camp);
+    var p = r.points[j];
+    var tot = score[monCampJ] || 0;
+    html += '<div class="verdict__ligne' + (gagne ? " verdict__ligne--gagne" : "") +
+            (j === moi ? " verdict__ligne--moi" : "") + '">' +
+            '<b>' + nomDeLaPlace(j) + '</b>' +
+            '<span class="verdict__pts">' + p + ' pt' + (p > 1 ? "s" : "") + '</span>' +
+            '<span class="verdict__tot">' + tot + ' donne' + (tot > 1 ? "s" : "") + '</span>' +
+            '</div>';
+  }
+  return html;
+}
+
+function majVerdict(){
+  var v = $("#verdict");
+  if (!v) return;
+  var d = verdictDeLaDonne();
+  if (!d){ v.hidden = true; return; }
+  /* Le compte des donnes gagnees se met a jour APRES le premier dessin : si
+     l'on ne compare que le mot et la phrase, le tableau reste fige a zero et
+     le gagnant lit « 0 donne » alors qu'il vient d'en gagner une. */
+  var compte = compteDeLaDonne();
+  if (!v.hidden && v.dataset.mot === d.mot + d.detail + compte) return;
+  v.dataset.mot = d.mot + d.detail + compte;
+  v.className = "verdict verdict--" + d.ton;
+  $("#verdict-mot").textContent = d.mot;
+  $("#verdict-detail").textContent = d.detail;
+  $("#verdict-compte").innerHTML = compte +
+    (d.ton !== "nul" && /cochon/i.test(d.mot) ? historiqueDeLaTable() : "");
+  $("#verdict-partager").hidden = !texteDeVictoire();
+  $("#verdict-suite").textContent = (enLigne() && LIGNE.vue() && LIGNE.vue().finie)
+    ? "Nouvelle partie" : "Donne suivante";
+  v.hidden = false;
+  /* Le verdict dit tout, en grand : repeter la meme phrase sous la table
+     n'ajoute rien et brouille l'ecran. */
+  var e = $("#etat");
+  if (e){ e.textContent = ""; e.className = "etat"; }
+}
+
 function majPartage(){
   var b = $("#partager");
   if (!b) return;
   var texte = texteDeVictoire();
-  b.hidden = !texte;
   b.dataset.texte = texte || "";
+  /* Le verdict porte deja le sien : deux boutons identiques a l'ecran, c'est
+     un doute pour le joueur, pas un choix. */
+  var verdictOuvert = $("#verdict") && !$("#verdict").hidden;
+  b.hidden = !texte || verdictOuvert;
 }
 
 function partagerLaVictoire(){
-  var texte = $("#partager").dataset.texte;
+  var texte = $("#partager").dataset.texte || texteDeVictoire();
   if (!texte) return;
   /* Le partage NATIF d'abord : c'est lui, et lui seul, qui donne acces au
      STATUT WhatsApp sur telephone. Le lien wa.me n'ouvre qu'une discussion. */
@@ -2765,7 +3063,7 @@ function dessiner(){
   /* Les places et la main D'ABORD : c'est sur elles qu'on mesure l'aire, et
      les mesurer avant de les avoir dessinees donnait la taille d'avant. */
   dessinerMain(); dessinerPlaces(); dessinerScore(); dessinerPioche();
-  dessinerChaine(); majBoutons(); majPartage();
+  dessinerChaine(); majBoutons(); majVerdict(); majPartage();
 }
 
 /* ───────────────────────────────────────────────────────── les boutons ── */
@@ -2921,6 +3219,8 @@ function finir(){
   dire(texte, tienne ? "gagne" : (r.nul ? "" : "perdu"));
 
   var t = tableCourante();
+  t.donnes.push(r.points.slice(0, partie.joueurs));
+  if (t.donnes.length > 12) t.donnes.shift();
   if (camp !== null){
     t.score[camp] = (t.score[camp] || 0) + 1;
     t.serie = (t.meneur === camp) ? t.serie + 1 : 1;
@@ -3110,6 +3410,11 @@ function demarrer(){
   });
 
   $("#partager").addEventListener("click", partagerLaVictoire);
+  $("#verdict-partager").addEventListener("click", partagerLaVictoire);
+  $("#verdict-suite").addEventListener("click", function(){
+    $("#verdict").hidden = true;
+    rejouer();
+  });
   $("#boude").addEventListener("click", jouerBoude);
   $("#rejouer").addEventListener("click", rejouer);
   $("#voile-fermer").addEventListener("click", fermerFormulaire);
