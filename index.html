@@ -470,6 +470,14 @@ h1{
 }
 .actions button:disabled{opacity:.34;cursor:not-allowed}
 .actions .boude{background:var(--alerte);border-color:transparent;color:#fff}
+/* Le bouton de la victoire : vert WhatsApp, parce que c'est la qu'il va. */
+.partager{
+  background:#25D366!important;color:#06331A!important;border:0!important;
+  font-weight:900!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.34);
+  animation:paraitre .35s ease-out;
+}
+@keyframes paraitre{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .actions .boude:disabled{background:rgba(4,38,18,.42);color:var(--encre)}
 
 .score{
@@ -773,6 +781,9 @@ h1{
     <button class="boude" id="boude" type="button" disabled>Boudé</button>
     <button id="poser-gauche" type="button" hidden>Poser à gauche</button>
     <button id="poser-droite" type="button" hidden>Poser à droite</button>
+    <!-- LA VICTOIRE SE MONTRE. C'est le moteur du jeu : une partie gagnee
+         qu'on affiche en statut WhatsApp emmene le lien avec elle. -->
+    <button class="partager" id="partager" type="button" hidden>Partager ma victoire</button>
   </div>
 
   <div class="score" id="score"></div>
@@ -2655,11 +2666,84 @@ function dessinerPioche(){
   e.setAttribute("title", n ? (n + " dominos à piocher") : "La pioche est vide");
 }
 
+/* ═══════════════════════════════════════════════ PARTAGER SA VICTOIRE ═══
+   Une partie gagnee ne doit pas s'eteindre en silence : c'est le meilleur
+   moment du jeu, et c'est aussi ce qui le fait voyager. Le texte dit ce qui
+   s'est REELLEMENT passe, jamais autre chose : on ne se vante pas d'un
+   cochon qu'on n'a pas mis. */
+function adressePublique(){
+  if (location.protocol === "http:" || location.protocol === "https:"){
+    return location.origin + location.pathname;
+  }
+  return "https://lsqz971.github.io/lsqz-domino/";
+}
+
+function texteDeVictoire(){
+  if (!partie || !partie.fini || !partie.resultat) return null;
+  var r = partie.resultat, moi = monSiege();
+  var monCamp = partie.equipes ? (moi % 2) : moi;
+  var camp = partie.equipes ? r.equipe : r.gagnant;
+  if (camp === null || camp === undefined || camp !== monCamp) return null;
+
+  var t = tableCourante();
+  var enLigneIci = enLigne();
+  var vue = enLigneIci ? LIGNE.vue() : null;
+  var serie = vue ? vue.serie : t.serie;
+
+  var nomTable = TITRES_DE_TABLE[partie.joueurs].titre.toLowerCase();
+  var phrase;
+
+  if (serie >= 3){
+    phrase = partie.equipes
+      ? "Trois d'affilée avec mon partenaire : la table est à nous, cochon !"
+      : "Trois d'affilée : la table est à moi, cochon !";
+  } else if (r.cause === "main-vide"){
+    if (r.gagnant === moi){
+      phrase = partie.equipes
+        ? "DOMINO ! J'ai posé mon dernier domino, on les met cochon."
+        : "DOMINO ! J'ai posé mon dernier domino, je les mets cochon.";
+    } else {
+      phrase = "Mon partenaire a posé son dernier domino : on l'emporte.";
+    }
+  } else {
+    var pts = r.scores || r.points;
+    var mien = pts[camp];
+    var autres = [];
+    for (var k = 0; k < pts.length; k++) if (k !== camp) autres.push(pts[k]);
+    /* A quatre on gagne A DEUX : ecrire « je » serait voler la moitie du
+       merite de son partenaire. */
+    phrase = "Le jeu est mort et " + (partie.equipes ? "on l'emporte" : "je l'emporte") +
+             " aux points, " + mien + " contre " + autres.join(" et ") + ".";
+  }
+
+  return phrase + "\n\nAu " + nomTable + ", sur L'SQz Domino.\n" + adressePublique();
+}
+
+function majPartage(){
+  var b = $("#partager");
+  if (!b) return;
+  var texte = texteDeVictoire();
+  b.hidden = !texte;
+  b.dataset.texte = texte || "";
+}
+
+function partagerLaVictoire(){
+  var texte = $("#partager").dataset.texte;
+  if (!texte) return;
+  /* Le partage NATIF d'abord : c'est lui, et lui seul, qui donne acces au
+     STATUT WhatsApp sur telephone. Le lien wa.me n'ouvre qu'une discussion. */
+  if (navigator.share){
+    navigator.share({ text: texte }).catch(function(){});
+    return;
+  }
+  window.open("https://wa.me/?text=" + encodeURIComponent(texte), "_blank", "noopener");
+}
+
 function dessiner(){
   /* Les places et la main D'ABORD : c'est sur elles qu'on mesure l'aire, et
      les mesurer avant de les avoir dessinees donnait la taille d'avant. */
   dessinerMain(); dessinerPlaces(); dessinerScore(); dessinerPioche();
-  dessinerChaine(); majBoutons();
+  dessinerChaine(); majBoutons(); majPartage();
 }
 
 /* ───────────────────────────────────────────────────────── les boutons ── */
@@ -3003,6 +3087,7 @@ function demarrer(){
     if (partie) dessinerChaine();
   });
 
+  $("#partager").addEventListener("click", partagerLaVictoire);
   $("#boude").addEventListener("click", jouerBoude);
   $("#rejouer").addEventListener("click", rejouer);
   $("#voile-fermer").addEventListener("click", fermerFormulaire);
