@@ -1,0 +1,2678 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>L'SQz Domino</title>
+<meta name="description" content="Le domino autour d'une vraie table : caraïbéen à quatre en équipes, martiniquais à trois, européen à deux. Chinois sans pioche ou français avec pioche. Boudé, cochon, et le jeu mort.">
+<meta name="theme-color" content="#0A3B1D">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   DOMINO, L'SQz
+
+   On est AUTOUR D'UNE TABLE, pas devant une liste. Les trois joueurs ont
+   leur place sur le tapis : toi en bas, un adversaire a gauche, l'autre a
+   droite, chacun avec son jeton, son compte de pieces et sa voix quand il
+   boude. La chaine, elle, SERPENTE : elle part du milieu, file vers la
+   droite, remonte quand elle touche le bord, repart vers la gauche. Aucune
+   barre de defilement : la table entiere se voit d'un coup d'oeil, quitte a
+   ce que les pieces retrecissent, exactement comme quand on recule sa chaise.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{
+  --bois:       #0A3B1D;
+  --bois-clair: #12572A;
+  --encre:      #F2F7F0;
+  --encre-2:    #A9C8B2;
+  --ivoire:     #F4EEE0;
+  --ivoire-2:   #E2D9C6;
+  --dos:        #7A2F1E;   /* le dos des pieces adverses : bois rouge */
+  --dos-2:      #571F13;
+  --point:      #16130E;
+  --or:         #F0C64B;
+  --alerte:     #E4231C;
+  --pas:        clamp(12px,3.4vw,20px);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  margin:0;min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  color:var(--encre);
+  background:radial-gradient(circle at 50% 22%, #2F8A55 0%, #1B6B3A 45%, #0C4522 100%);
+  display:flex;justify-content:center;align-items:flex-start;
+  -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+}
+body.verrou{overflow:hidden}
+
+.jeu{width:min(97vw,1180px);padding:var(--pas) var(--pas) 34px;}
+
+h1{
+  margin:.2em 0 .1em;font-size:clamp(20px,5.4vw,29px);letter-spacing:.02em;
+  text-align:center;text-transform:uppercase;
+}
+.sous{margin:0 0 12px;text-align:center;color:var(--encre-2);font-size:clamp(11px,3vw,13px)}
+
+/* ───────────────────────────────────────────────── la barre de reglages ── */
+.reglages{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;justify-content:center;
+  padding:9px;border-radius:12px;margin-bottom:12px;
+  background:linear-gradient(180deg,rgba(10,59,29,.55),rgba(10,59,29,.30));
+  border:1px solid rgba(255,255,255,.08);
+}
+.reglages label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--encre-2)}
+.reglages select,.reglages button{
+  font:inherit;font-size:13px;padding:7px 10px;border-radius:9px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(4,38,18,.42);color:var(--encre);
+}
+.reglages button{
+  background:var(--or);color:#2A1D00;font-weight:800;border-color:transparent;cursor:pointer;
+}
+.reglages button:active{transform:translateY(1px)}
+
+/* ══════════════════════════════════════════════════════════ LA TABLE ══
+   Un vrai tapis, avec les trois places autour. Le cadre en bois, le feutre
+   au grain, le filigrane de la libellule au milieu. */
+/* LE MEUBLE, EN BOIS VERNI. Le vernis ne se rend pas par un voile pale
+   etale partout : ce qui le fait, c'est un REFLET NET, une bande de lumiere
+   bien delimitee qui coupe le bois en biais, plus des aretes qui accrochent
+   le jour. On empile donc trois choses : le bois et ses veines, la bande de
+   reflet, et un lustre general qui creuse les bords. */
+.meuble{
+  position:relative;padding:clamp(11px,2.6vw,19px);border-radius:26px;
+  background:
+    repeating-linear-gradient(93deg, rgba(30,12,2,.20) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(87deg, rgba(255,222,175,.09) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(90deg, rgba(20,8,0,.14) 0 3px, transparent 3px 21px),
+    linear-gradient(157deg, #B47A47 0%, #8B5329 22%, #5E3418 52%, #7E4A24 74%, #A96E3C 100%);
+  box-shadow:
+    inset 0 3px 0 rgba(255,236,205,.62),
+    inset 0 -5px 10px rgba(24,8,0,.66),
+    inset 4px 0 9px rgba(24,8,0,.34),
+    inset -4px 0 9px rgba(24,8,0,.34),
+    0 18px 42px rgba(0,0,0,.50);
+}
+
+/* LA BANDE DE REFLET : c'est elle, et elle seule, qui dit « verni ». Nette
+   sur ses bords, elle balaie le meuble en diagonale comme le ferait une
+   fenetre au-dessus de la table. */
+.meuble::before{
+  content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;
+  background:linear-gradient(122deg,
+    transparent 0%,
+    rgba(255,250,238,.10) 17%,
+    rgba(255,252,244,.52) 22%,
+    rgba(255,255,250,.72) 25%,
+    rgba(255,250,238,.30) 29%,
+    transparent 36%,
+    transparent 62%,
+    rgba(255,244,224,.20) 67%,
+    rgba(255,248,234,.34) 70%,
+    rgba(255,244,224,.08) 74%,
+    transparent 80%);
+  mix-blend-mode:screen;
+}
+
+/* Le lustre : la lumiere rase du haut, l'ombre profonde du bas. */
+.meuble::after{
+  content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(255,240,215,.30) 0%, transparent 12%,
+                    transparent 78%, rgba(0,0,0,.26) 100%),
+    radial-gradient(140% 90% at 28% 4%, rgba(255,246,228,.26) 0%, transparent 52%);
+}
+
+.tapis{
+  /* z-index : le feutre passe DEVANT les reflets du meuble. Le vernis brille
+     sur le bois, jamais sur le tapis, qui est mat par nature. */
+  position:relative;z-index:1;border-radius:14px;
+  /* LA LECON DE LUDICASH (29/08/2026). Chez eux la table fait 1024 px de
+     large pour une piece de 52 : la chaine n'a jamais besoin d'etre reduite.
+     Chez nous elle etait plafonnee a 760, et le domino tombait a 18 px sur
+     telephone. On ne fixe donc plus une proportion, on prend la place qu'il
+     y a : PORTRAIT sur telephone, ou la chaine descend, PAYSAGE sur grand
+     ecran, ou elle s'allonge. Mesure : 18 px avant, 33 px sur telephone et
+     65 px sur bureau apres. */
+  height:min(64vh,540px);
+  margin:0 auto;
+  background:
+    repeating-linear-gradient(48deg,rgba(255,255,255,.020) 0 2px,transparent 2px 5px),
+    radial-gradient(ellipse at 50% 46%, #2F8A55 0%, #1E7040 54%, #0F4A26 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(30,12,2,.55),
+    inset 0 3px 10px rgba(0,0,0,.55),
+    inset 0 0 70px rgba(0,0,0,.42);
+  overflow:hidden;
+}
+@media (min-width:760px){ .tapis{height:min(72vh,660px)} }
+
+.filigrane{
+  position:absolute;inset:26% 30%;pointer-events:none;opacity:.12;
+  background:var(--logo-filigrane) center/contain no-repeat;
+}
+.filigrane.urgence{animation:battre .5s steps(2,end) infinite}
+@keyframes battre{0%,100%{opacity:.12}50%{opacity:.32}}
+
+/* ──────────────────────────────────────────── les places autour du tapis ──
+   Chacun a son coin. C'est ce qui fait qu'on joue AVEC des gens, et pas
+   contre un compteur. */
+/* CHACUN TIENT SON JEU DANS LE SENS DE SA PLACE, comme autour d'une vraie
+   table : Zandoli a gauche et Ti Kabwit a droite gardent leurs pieces EN
+   COLONNE le long de leur bord, toi tu etales les tiennes EN LIGNE devant
+   toi, en bas. C'est ce detail, et lui seul, qui fait qu'on est assis a la
+   table au lieu de regarder un tableau de bord. */
+.place{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:3}
+.place--gauche{left:8px;top:50%;transform:translateY(-50%)}
+.place--droite{right:8px;top:50%;transform:translateY(-50%)}
+.place--haut{left:50%;top:8px;transform:translateX(-50%);flex-direction:row;align-items:flex-start}
+.place--haut .place__dos{flex-direction:row}
+.place--haut .place__bloc{align-items:flex-start}
+/* Ton partenaire, a quatre : un liseré discret dit qu'on joue ensemble. */
+.place.partenaire .jeton{
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255,236,205,.34) 0%, transparent 46%),
+    linear-gradient(154deg,#C08B4E 0%,#95602C 52%,#6B3F17 100%);
+}
+.place.partenaire .place__nom::after{content:" (avec toi)";opacity:.75}
+.place--bas{left:14px;bottom:12px;flex-direction:row;align-items:flex-end;gap:8px}
+
+/* Le jeton de chaque joueur : son initiale, et le compte de ses pieces
+   accroche dessous. Un cercle d'or dit a qui est le tour, sans un mot. */
+.jeton{
+  width:40px;height:40px;border-radius:50%;flex:none;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;letter-spacing:.02em;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255,228,190,.30) 0%, transparent 46%),
+    linear-gradient(154deg,#8A5730 0%,#65391D 52%,#43230F 100%);
+  border:2px solid rgba(255,214,170,.30);
+  box-shadow:0 3px 9px rgba(0,0,0,.48), inset 0 -2px 5px rgba(0,0,0,.45);
+}
+.place.actif .jeton{
+  border-color:var(--or);
+  box-shadow:0 0 0 3px rgba(240,198,75,.30), 0 3px 9px rgba(0,0,0,.40);
+}
+.jeton__n{
+  position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);
+  background:var(--bois);border:1px solid rgba(255,255,255,.24);
+  border-radius:9px;padding:0 5px;font-size:10px;font-weight:800;
+  color:var(--encre);white-space:nowrap;line-height:15px;
+}
+.place__bloc{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.place__nom{
+  font-size:10px;font-weight:700;color:var(--encre-2);white-space:nowrap;
+  text-shadow:0 1px 3px rgba(0,0,0,.65);margin-top:5px;
+}
+/* LE SABLIER DE CELUI QUI EST AU TRAIT. Il ne sert qu'en ligne : l'arbitre
+   joue a la place d'un joueur muet au bout d'une minute, et personne ne le
+   savait. Ludicash met un minuteur sous chaque avatar, c'est la meme idee. */
+.place__temps{
+  font-size:11px;font-weight:800;color:var(--encre-2);min-height:0;
+  letter-spacing:.04em;font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 3px rgba(0,0,0,.7);
+}
+.place__temps.presse{color:var(--alerte)}
+
+.place__dit{
+  font-size:11px;font-weight:800;color:var(--or);min-height:13px;
+  letter-spacing:.05em;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.7);
+}
+
+/* Les pieces de l'adversaire, vues de dos, serrees dans sa main : de notre
+   place on ne voit que leur tranche, alignee le long de son bord. */
+.place__dos{display:flex;flex-direction:column;gap:2px;align-items:center}
+/* LE JOUEUR EN FACE TIENT SON JEU DANS LE MEME SENS QUE MOI (Pierre, photo
+   du 29/08/2026). Autour d'une vraie table, celui d'en face dresse ses
+   dominos devant lui exactement comme moi : je vois donc leurs DOS DEBOUT,
+   alignes, et non des tranches posees a plat. Ce sont les voisins de gauche
+   et de droite qui gardent les leurs de profil, le long de leur bord. */
+.place--haut .place__dos{
+  flex-direction:row;flex-wrap:wrap;justify-content:center;max-width:236px;gap:3px;
+}
+.place--haut .dos{
+  width:19px;height:38px;border-radius:3px;
+  background:linear-gradient(160deg,#8C3A24 0%,#71291A 45%,#4E1B10 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,190,160,.34),
+    inset -1px 0 0 rgba(0,0,0,.40),
+    inset 0 -1px 0 rgba(0,0,0,.45),
+    0 2px 3px rgba(0,0,0,.34);
+}
+/* la rainure du milieu, pour qu'un dos reste un domino et pas une tuile :
+   en travers chez celui d'en face, dans la longueur chez les voisins */
+.place--haut .dos::after{
+  content:"";position:absolute;left:12%;right:12%;top:50%;height:1px;
+  background:rgba(0,0,0,.45);box-shadow:0 1px 0 rgba(255,190,160,.18);
+}
+.place--gauche .dos::after,
+.place--droite .dos::after{
+  content:"";position:absolute;top:12%;bottom:12%;left:50%;width:1px;
+  background:rgba(0,0,0,.45);box-shadow:1px 0 0 rgba(255,190,160,.18);
+}
+
+/* Les pieces ouvertes en fin de donne : assez petites pour tenir a la place
+   de chacun, assez grandes pour se compter d'un coup d'oeil. */
+.d--mini{width:38px;height:19px;flex:none}
+/* Celui d'en face les dresse, comme moi : meme piece, tournee d'un quart. */
+.d--mini.d--debout{width:19px;height:38px}
+.d--mini .d__moitie{padding:8%}
+.d--mini .p::after{width:58%;height:58%;box-shadow:inset 0 1px 1px rgba(0,0,0,.8)}
+.d--mini::after{border-radius:4px}
+.place__vide{font-size:10px;color:var(--encre-2);font-style:italic}
+/* LE CRI DE CELUI QUI A FINI. Il ne montre pas une main vide, il dit DOMINO. */
+.place__domino{
+  font-size:12px;font-weight:900;letter-spacing:.08em;color:var(--or);
+  text-shadow:0 1px 4px rgba(0,0,0,.8);white-space:nowrap;
+}
+/* LE MEME DOMINO POUR TOUT LE MONDE, SEULEMENT TOURNE (Pierre, 29/08/2026).
+   Les voisins de gauche et de droite tiennent leur jeu dans le sens de leur
+   place, donc couche le long de leur bord, mais c'est exactement la meme
+   piece que celle du joueur d'en face : 38 x 19 ici, 19 x 38 la-haut. Une
+   tranche plus fine ne se lisait plus comme un domino mais comme un trait. */
+.dos{
+  position:relative;
+  width:38px;height:19px;border-radius:3px;flex:none;
+  background:linear-gradient(168deg,#8C3A24 0%,#71291A 45%,#4E1B10 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,190,160,.34),
+    inset 0 -1px 0 rgba(0,0,0,.45),
+    0 1px 0 rgba(0,0,0,.30);
+}
+
+/* ───────────────────────────────────────────────────────── LA PIOCHE ──
+   Elle n'existe qu'en domino francais. Un petit tas de dos empiles, avec ce
+   qu'il en reste ecrit dessus : de loin on voit la pile baisser, comme sur
+   une vraie table. En chinois elle est simplement absente, puisque ce qui
+   reste de cote ne se touche jamais. */
+.pioche{
+  position:absolute;right:8px;top:8px;z-index:3;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.pioche__tas{position:relative;width:30px;height:20px}
+.pioche__tas i{
+  position:absolute;left:0;width:26px;height:9px;border-radius:2px;
+  background:linear-gradient(168deg,#8C3A24 0%,#71291A 45%,#4E1B10 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,190,160,.34),
+    inset 0 -1px 0 rgba(0,0,0,.45),
+    0 1px 0 rgba(0,0,0,.30);
+}
+.pioche__tas i:nth-child(1){top:8px;left:0}
+.pioche__tas i:nth-child(2){top:4px;left:2px}
+.pioche__tas i:nth-child(3){top:0;left:4px}
+.pioche__n{
+  background:var(--bois);border:1px solid rgba(255,255,255,.24);
+  border-radius:9px;padding:0 6px;font-size:10px;font-weight:800;
+  color:var(--encre);line-height:16px;
+}
+.pioche--vide{opacity:.34}
+
+/* ─────────────────────────────────────────────── LE SERPENTIN AU CENTRE ──
+   La zone laissee libre au milieu du tapis. Les pieces y sont posees en
+   coordonnees absolues, et l'ensemble est mis a l'echelle pour tenir. */
+.aire{
+  /* le haut degage la place du joueur d'en face, qui s'y trouve aux tables
+     a deux et a quatre : sans cela la chaine lui passe dessus */
+  position:absolute;left:64px;right:64px;top:56px;bottom:84px;
+  transition:top .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.chaine{position:relative;transform-origin:center center}
+.chaine__vide{
+  color:rgba(255,255,255,.46);font-size:13px;font-style:italic;text-align:center;
+  white-space:nowrap;
+}
+
+/* ────────────────────────────────────────────────────────── un domino ── */
+/* UNE PIECE EN RELIEF. Trois couches suffisent, et aucune image n'est
+   necessaire : l'os poli par un degrade oblique, les aretes par des ombres
+   internes (claires en haut a gauche, sombres en bas a droite), et surtout
+   L'EPAISSEUR par deux ombres pleines empilees sous la piece, qui font sa
+   tranche. La derniere ombre, floue, la decolle du feutre. */
+.d{
+  position:relative;display:flex;
+  background:
+    linear-gradient(152deg, #FBF8F1 0%, #F5F0E4 45%, #EDE7D8 100%);
+  border-radius:5px;
+  /* Relief attenue le 29/08/2026 sur demande de Pierre : on garde l'epaisseur
+     et l'arete, mais d'un ton, pas d'un relief de maquette. */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.70),
+    inset 0 -1px 0 rgba(126,110,84,.22),
+    0 1px 0 #CFC4AC,
+    0 2px 4px rgba(0,0,0,.28);
+  color:var(--point);
+}
+/* le poli : juste un souffle de lumiere en haut, plus un reflet de vitrine */
+.d::after{
+  content:"";position:absolute;inset:0;border-radius:5px;pointer-events:none;
+  background:linear-gradient(140deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,.05) 22%,
+                             transparent 46%);
+}
+.d--pose{position:absolute}
+.d--couche{flex-direction:row}
+.d--debout{flex-direction:column}
+
+.d__moitie{
+  flex:1;position:relative;display:grid;
+  grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  padding:11%;
+}
+/* la rainure du milieu : un trait creux, donc une ombre suivie d'un reflet */
+.d--couche .d__moitie:first-child{
+  border-right:1px solid rgba(96,82,60,.52);
+  box-shadow:1px 0 0 rgba(255,255,255,.55);
+}
+.d--debout .d__moitie:first-child{
+  border-bottom:1px solid rgba(96,82,60,.52);
+  box-shadow:0 1px 0 rgba(255,255,255,.55);
+}
+.p{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+/* les points sont GRAVES : creux sombre, ombre interne en haut, et un fil
+   de lumiere sous le bord inferieur, comme un trou dans de l'os poli */
+.p::after{
+  content:"";width:64%;height:64%;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, #3A342C 0%, #1E1B16 55%, #14120E 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(0,0,0,.55),
+    0 1px 0 rgba(255,255,255,.45);
+}
+.d--dernier{outline:2px solid #FFFFFF;outline-offset:2px}
+
+.d--main{width:36px;height:72px;flex-direction:column;cursor:default;flex:none}
+/* UNE PIECE QU'ON NE PEUT PAS JOUER RESTE PARFAITEMENT LISIBLE. Un joueur
+   regarde son jeu en permanence, pour preparer le coup d'apres : lui eteindre
+   quatre dominos sur cinq, c'est lui retirer sa main. Le signal du coup
+   possible vient du liseré d'or, pas de l'ecrasement du reste. On se contente
+   donc de poser ces pieces d'un demi-ton en arriere. */
+.d--main.hors{filter:brightness(.96) saturate(.94)}
+.d--main.hors::after{opacity:.7}
+.d--jouable{
+  cursor:pointer;
+  outline:2px solid var(--or);outline-offset:1px;border-radius:5px;
+}
+.d--jouable:active{transform:translateY(1px)}
+.d--choisi{outline:3px solid var(--alerte);outline-offset:1px}
+
+/* ──────────────────────────────────────────────────── l'etat et la main ── */
+.etat{
+  text-align:center;font-weight:700;margin:10px 0 6px;min-height:22px;
+  font-size:clamp(14px,3.8vw,17px);
+}
+.etat.gagne{color:var(--or)}
+.etat.perdu{color:var(--alerte)}
+
+.main{
+  position:absolute;left:62px;right:12px;bottom:10px;z-index:4;
+  display:flex;gap:4px;justify-content:center;align-items:flex-end;
+  min-height:74px;
+}
+.main .chaine__vide{align-self:center}
+
+.actions{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.actions button{
+  font:inherit;font-size:14px;font-weight:800;padding:11px 18px;border-radius:11px;
+  border:1px solid rgba(255,255,255,.16);background:rgba(4,38,18,.42);
+  color:var(--encre);cursor:pointer;
+}
+.actions button:disabled{opacity:.34;cursor:not-allowed}
+.actions .boude{background:var(--alerte);border-color:transparent;color:#fff}
+.actions .boude:disabled{background:rgba(4,38,18,.42);color:var(--encre)}
+
+.score{
+  display:flex;justify-content:center;gap:14px;margin-top:14px;flex-wrap:wrap;
+  font-size:12px;color:var(--encre-2);
+}
+.score b{color:var(--encre);font-size:15px}
+.score .cochon{color:var(--alerte);font-weight:800}
+
+.regle{
+  margin-top:20px;font-size:12.5px;line-height:1.62;color:var(--encre-2);
+  background:rgba(4,38,18,.30);border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;padding:12px 14px;
+}
+.regle b{color:var(--encre)}
+
+/* ───────────────────────────────────────────────────────── le salon ──
+   La liste des tables ouvertes, par-dessus la sienne. Meme habit que le
+   reste : bois, feutre, et rien qui clignote. */
+.salon{
+  position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+  padding:var(--pas);background:rgba(6,32,16,.94);
+}
+.salon__boite{
+  width:min(96vw,520px);max-height:90vh;overflow:auto;
+  background:linear-gradient(180deg,#12572A,#0A3B1D);
+  border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px;
+  box-shadow:0 20px 50px rgba(0,0,0,.55);
+}
+.salon h2{margin:0 0 4px;font-size:18px}
+.salon h3{margin:18px 0 8px;font-size:13px;color:var(--encre-2);font-weight:700}
+.salon__nom{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--encre-2);margin:12px 0}
+.salon__nom input{
+  font:inherit;font-size:15px;padding:9px 11px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.18);background:rgba(4,38,18,.5);color:var(--encre);
+}
+.salon__note-nom{font-size:11px;color:var(--encre-2)}
+.salon__nom input.manque{
+  border-color:var(--alerte);
+  box-shadow:0 0 0 3px rgba(228,35,28,.22);
+}
+.salon__nom input.manque + .salon__note-nom{color:var(--alerte);font-weight:700}
+
+.salon__ouvrir{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;
+  padding:12px;border-radius:12px;background:rgba(4,38,18,.34);
+  border:1px solid rgba(255,255,255,.08);
+}
+.salon__ouvrir label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--encre-2);flex:1;min-width:150px}
+.salon__ouvrir select{
+  font:inherit;font-size:13px;padding:7px 9px;border-radius:9px;
+  border:1px solid rgba(255,255,255,.16);background:rgba(4,38,18,.5);color:var(--encre);
+}
+.salon__ouvrir button{
+  font:inherit;font-size:14px;font-weight:800;padding:10px 16px;border-radius:10px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;
+}
+.salon__ligne{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:7px;
+  background:rgba(4,38,18,.38);border:1px solid rgba(255,255,255,.08);border-radius:10px;
+  font-size:13px;
+}
+.salon__ligne span:first-child{flex:1;min-width:0}
+.salon__places{color:var(--encre-2);font-size:12px;white-space:nowrap}
+.salon__ligne button{
+  font:inherit;font-size:13px;font-weight:700;padding:7px 13px;border-radius:9px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;
+}
+.salon__note{
+  font-size:12.5px;line-height:1.6;color:var(--encre-2);
+  background:rgba(4,38,18,.30);border:1px solid rgba(255,255,255,.07);
+  border-radius:10px;padding:11px 13px;margin:0;
+}
+.salon .bouton--pale{width:100%;margin-top:16px}
+
+/* ────────────────────────────────────────── le voile du formulaire ── */
+.voile{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  padding:var(--pas);background:#093118;opacity:0;transition:opacity .26s;
+}
+.voile--ouvert{opacity:1}
+.voile__boite{width:min(96vw,560px);height:min(90vh,760px);display:flex;flex-direction:column;gap:10px}
+.cadre{flex:1;width:100%;min-height:340px;border:0;border-radius:12px;background:#EDE8DC}
+.bouton--pale{
+  font:inherit;font-size:14px;padding:11px;border-radius:11px;cursor:pointer;
+  background:transparent;color:var(--encre-2);border:1px solid rgba(255,255,255,.20);
+}
+
+@media (max-width:420px){
+  .d--main{width:29px;height:58px}
+  .jeton{width:34px;height:34px;font-size:14px}
+  .dos{width:30px;height:15px}
+  .place--haut .dos{width:15px;height:30px}
+  .place--haut .place__dos{max-width:160px;gap:2px}
+  .aire{left:56px;right:56px;top:58px;bottom:80px}
+  .place--haut .place__bloc{max-width:150px}
+  .main{left:50px;right:8px;min-height:60px}
+  .place--bas{left:10px;bottom:9px}
+  .place__nom{font-size:9px}
+}
+</style>
+<style id="logos">:root{--logo-filigrane:url(data:image/png;base64,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)}</style>
+</head>
+<body>
+
+<div class="jeu">
+
+  <h1 id="titre">Domino martiniquais</h1>
+  <p class="sous" id="sous">Sept dominos chacun. Trois parties pour mettre cochon.</p>
+
+  <div class="reglages">
+    <label>Règles
+      <select id="variante">
+        <option value="chinois" selected>Domino chinois (sans la pioche)</option>
+        <option value="pioche">Domino français (avec la pioche)</option>
+      </select>
+    </label>
+    <label>Temps
+      <select id="duree">
+        <option value="0" selected>Illimité</option>
+        <option value="10">10 secondes</option>
+        <option value="20">20 secondes</option>
+        <option value="30">30 secondes</option>
+      </select>
+    </label>
+    <button id="rejouer" type="button">Nouvelle partie</button>
+    <button id="quitter" type="button" hidden>Quitter la table</button>
+  </div>
+
+  <div class="reglages">
+    <label>Adversaires
+      <select id="adversaire">
+        <option value="ordinateur" selected>Contre l'ordinateur</option>
+        <option value="ligne">Contre des joueurs en ligne</option>
+      </select>
+    </label>
+    <label>Table
+      <select id="joueurs">
+        <option value="2">Domino européen</option>
+        <option value="3" selected>Domino martiniquais</option>
+        <option value="4">Domino caraïbéen</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- LA TABLE. Le meuble en bois verni, le feutre dedans, les places autour. -->
+  <div class="meuble">
+  <div class="tapis">
+    <div class="filigrane" id="filigrane"></div>
+
+    <div class="place place--gauche" id="siege-gauche" hidden>
+      <div class="jeton" id="jeton-gauche">Z<span class="jeton__n">7</span></div>
+      <div class="place__bloc">
+        <div class="place__nom">Zandoli</div>
+        <div class="place__dos"></div>
+        <div class="place__temps"></div>
+        <div class="place__dit"></div>
+      </div>
+    </div>
+
+    <div class="place place--haut" id="siege-haut" hidden>
+      <div class="jeton" id="jeton-haut">K<span class="jeton__n">7</span></div>
+      <div class="place__bloc">
+        <div class="place__nom">Ti Kabwit</div>
+        <div class="place__dos"></div>
+        <div class="place__temps"></div>
+        <div class="place__dit"></div>
+      </div>
+    </div>
+
+    <div class="place place--droite" id="siege-droite" hidden>
+      <div class="jeton" id="jeton-droite">M<span class="jeton__n">7</span></div>
+      <div class="place__bloc">
+        <div class="place__nom">Manglous</div>
+        <div class="place__dos"></div>
+        <div class="place__temps"></div>
+        <div class="place__dit"></div>
+      </div>
+    </div>
+
+    <div class="place place--bas" id="siege-bas">
+      <div class="jeton" id="jeton-bas">T<span class="jeton__n">7</span></div>
+      <div class="place__bloc">
+        <div class="place__nom">Toi</div>
+        <div class="place__temps"></div>
+        <div class="place__dit"></div>
+      </div>
+    </div>
+
+    <!-- LA PIOCHE, en domino francais seulement. Autour d'une vraie table la
+         pile est posee la, et tout le monde voit fondre : c'est une
+         information de jeu, pas une decoration. -->
+    <div class="pioche" id="pioche" hidden>
+      <div class="pioche__tas"><i></i><i></i><i></i></div>
+      <div class="pioche__n" id="pioche-n">0</div>
+    </div>
+
+    <div class="aire">
+      <div class="chaine" id="chaine" role="list" aria-label="La chaîne posée sur la table"></div>
+    </div>
+
+    <div class="main" id="main" role="list" aria-label="Ta main"></div>
+  </div>
+  </div>
+
+  <div class="etat" id="etat">Distribution</div>
+
+  <div class="actions">
+    <button class="boude" id="boude" type="button" disabled>Boudé</button>
+    <button id="poser-gauche" type="button" hidden>Poser à gauche</button>
+    <button id="poser-droite" type="button" hidden>Poser à droite</button>
+  </div>
+
+  <div class="score" id="score"></div>
+
+  <p class="regle"><b>La règle.</b> Vingt-huit dominos, sept pour chacun. Le plus fort
+  double engage, à défaut le plus gros domino. On joue dans le sens des aiguilles
+  d'une montre, en faisant correspondre les chiffres aux deux bouts de la chaîne.
+  Qui ne peut pas jouer tape la table et dit <b>boudé</b> : son tour passe.
+  Si les trois joueurs boudent d'affilée, <b>le jeu est mort</b> : celui qui a le moins
+  de points l'emporte. Le premier à poser tout son jeu met les autres <b>cochon</b>.
+  Trois parties gagnées d'affilée, et la table est à toi.
+  <b>À deux</b>, le domino européen : quatorze pièces restent de côté.
+  <b>À trois</b>, le martiniquais : sept de côté. <b>À quatre</b>, le caraïbéen :
+  plus aucune de côté, et l'on joue en équipes de deux, son partenaire en face.
+  En <b>chinois</b>, ce qui reste de côté ne se pioche jamais ; en <b>français</b>,
+  qui ne peut pas jouer pioche tant qu'il reste des pièces.</p>
+
+</div>
+
+<div class="salon" id="salon" hidden role="dialog" aria-modal="true" aria-label="Les tables en ligne">
+  <div class="salon__boite">
+    <h2>Jouer contre des joueurs en ligne</h2>
+
+    <label class="salon__nom">Ton nom à la table
+      <input id="salon-nom" type="text" maxlength="18" placeholder="Ton prénom" autocomplete="off"
+             required aria-required="true">
+      <span class="salon__note-nom" id="salon-nom-note">Les autres joueurs le verront.</span>
+    </label>
+
+    <div class="salon__ouvrir">
+      <label>Table
+        <select id="salon-joueurs">
+          <option value="2">Domino européen</option>
+          <option value="3" selected>Domino martiniquais</option>
+          <option value="4">Domino caraïbéen</option>
+        </select>
+      </label>
+      <label>Règles
+        <select id="salon-variante">
+          <option value="chinois" selected>Domino chinois (sans la pioche)</option>
+          <option value="pioche">Domino français (avec la pioche)</option>
+        </select>
+      </label>
+      <button id="salon-ouvrir" type="button">Ouvrir une table</button>
+    </div>
+
+    <h3>Les tables ouvertes</h3>
+    <div id="salon-tables"></div>
+
+    <button class="bouton--pale" id="salon-fermer" type="button">Revenir à ma table</button>
+  </div>
+</div>
+
+<div class="voile" id="voile" hidden role="dialog" aria-modal="true" aria-label="L'SQz">
+  <div class="voile__boite">
+    <iframe class="cadre" id="cadre" title="L'SQz"></iframe>
+    <button class="bouton--pale" id="voile-fermer" type="button">Revenir au jeu</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   DOMINO, L'SQz
+   Un seul fichier, aucun serveur, aucune base de donnees. Tout l'etat de
+   la partie vit dans cette page.
+
+   LES REGLES CODEES ICI sont celles du domino MARTINIQUAIS (a trois),
+   verifiees le 28/08/2026 sur trois sources concordantes : trois joueurs,
+   sept dominos chacun, LES SEPT QUI RESTENT SONT MIS DE COTE et ne se
+   piochent jamais,
+   le plus fort double engage, on tourne dans le sens des aiguilles d'une
+   montre, qui ne peut pas jouer tape la table et dit BOUDE, et si les trois
+   boudent d'affilee le jeu est MORT, celui qui a le moins de points gagne.
+   Le premier a se defaire de tout son jeu met les autres COCHON.
+
+   NOMENCLATURE POSEE PAR PIERRE le 28/08/2026, a employer partout :
+   a quatre = domino CARAIBEEN (en equipes de deux), a trois = domino
+   MARTINIQUAIS, a deux = domino EUROPEEN ; avec pioche = domino FRANCAIS,
+   sans pioche = domino CHINOIS. L'ancien libelle est abandonne.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* Le formulaire L'SQz, commun aux jeux. Ne jamais retirer cette ligne :
+   PUBLIER.command refuse de mettre en ligne un fichier qui l'aurait perdue. */
+var TALLY = "1AQxXb";
+
+/* Quatre places autour de la table. Zandoli le lezard, Ti Kabwit le cabri,
+   Manglous la mangouste : trois betes du pays, faciles a dire et a retenir.
+   A quatre, ton partenaire est celui d'en face, donc Ti Kabwit. */
+var NOMS = ["Toi", "Zandoli", "Ti Kabwit", "Manglous"];
+/* Les initiales ne se deduisent pas des noms : "Toi" et "Ti Kabwit"
+   commencent tous les deux par un T, et deux jetons identiques autour d'une
+   table, c'est une confusion par partie. */
+var INITIALES = ["T", "Z", "K", "M"];
+
+/* ─────────────────────────────────────────────────────── LE MOTEUR ──
+   Rien ici ne touche au document : c'est ce qui rend le moteur testable
+   sans navigateur (voir test_moteur.js). */
+
+/* Les 28 pieces du double-six, toujours ecrites petit chiffre en premier. */
+function jeuComplet(){
+  var t = [];
+  for (var a = 0; a <= 6; a++) for (var b = a; b <= 6; b++) t.push([a, b]);
+  return t;
+}
+
+function points(d){ return d[0] + d[1]; }
+function estDouble(d){ return d[0] === d[1]; }
+function pointsMain(main){
+  var s = 0;
+  for (var i = 0; i < main.length; i++) s += points(main[i]);
+  return s;
+}
+function memePiece(x, y){
+  return (x[0] === y[0] && x[1] === y[1]) || (x[0] === y[1] && x[1] === y[0]);
+}
+
+/* Melange de Fisher-Yates. Le hasard est injectable : les tests rejouent
+   ainsi la meme donne autant de fois qu'ils veulent. */
+function melanger(t, hasard){
+  var r = hasard || Math.random;
+  for (var i = t.length - 1; i > 0; i--){
+    var j = Math.floor(r() * (i + 1));
+    var tmp = t[i]; t[i] = t[j]; t[j] = tmp;
+  }
+  return t;
+}
+
+/* La donne : sept pieces par joueur, et ce qui reste va de cote. A deux il
+   reste quatorze pieces, a trois sept, a quatre plus rien : les vingt-huit
+   sont en main, et c'est ce qui rend la table a quatre si serree. */
+function distribuer(hasard, joueurs){
+  var n = joueurs || 3;
+  var t = melanger(jeuComplet(), hasard), mains = [];
+  for (var j = 0; j < n; j++) mains.push(t.slice(j * 7, j * 7 + 7));
+  return { mains: mains, talon: t.slice(n * 7, 28) };
+}
+
+/* Qui engage : le plus fort double, a defaut la piece la plus lourde.
+   Renvoie {joueur, piece} ou null si personne n'a rien, ce qui ne peut pas
+   arriver avec vingt et une pieces en main. */
+function quiEngage(mains){
+  var meilleur = null;
+  for (var j = 0; j < mains.length; j++){
+    for (var i = 0; i < mains[j].length; i++){
+      var d = mains[j][i];
+      var rang = estDouble(d) ? 100 + d[0] : points(d);
+      if (!meilleur || rang > meilleur.rang) meilleur = { joueur: j, piece: d, rang: rang };
+    }
+  }
+  return meilleur;
+}
+
+/* Le plateau : la chaine des pieces DEJA ORIENTEES, de gauche a droite.
+   Le bout gauche est pieces[0][0], le bout droit pieces[n-1][1]. */
+function plateauVide(){ return { pieces: [], centre: 0 }; }
+function boutGauche(p){ return p.pieces.length ? p.pieces[0][0] : null; }
+function boutDroite(p){ return p.pieces.length ? p.pieces[p.pieces.length - 1][1] : null; }
+
+/* Les coups jouables d'une main sur un plateau. Sur une table vide, tout
+   passe, et on ne renvoie qu'un cote pour ne pas doubler la liste. */
+function coupsPossibles(main, plateau){
+  var out = [], i;
+  if (!plateau.pieces.length){
+    for (i = 0; i < main.length; i++) out.push({ i: i, cote: "droite" });
+    return out;
+  }
+  var g = boutGauche(plateau), d = boutDroite(plateau);
+  for (i = 0; i < main.length; i++){
+    var p = main[i];
+    if (p[0] === g || p[1] === g) out.push({ i: i, cote: "gauche" });
+    if (p[0] === d || p[1] === d) out.push({ i: i, cote: "droite" });
+  }
+  return out;
+}
+
+/* Oriente la piece pour le cote demande, sans la modifier sur place. */
+function orienter(piece, plateau, cote){
+  if (!plateau.pieces.length) return [piece[0], piece[1]];
+  if (cote === "gauche"){
+    var g = boutGauche(plateau);
+    return piece[1] === g ? [piece[0], piece[1]] : [piece[1], piece[0]];
+  }
+  var d = boutDroite(plateau);
+  return piece[0] === d ? [piece[0], piece[1]] : [piece[1], piece[0]];
+}
+
+/* Pose reellement. Renvoie la piece orientee, ou null si le coup est illegal :
+   aucun appelant ne doit pouvoir tricher en passant par ici. */
+function poser(plateau, piece, cote){
+  if (plateau.pieces.length){
+    var bout = cote === "gauche" ? boutGauche(plateau) : boutDroite(plateau);
+    if (piece[0] !== bout && piece[1] !== bout) return null;
+  }
+  var o = orienter(piece, plateau, cote);
+  if (cote === "gauche" && plateau.pieces.length){
+    plateau.pieces.unshift(o);
+    plateau.centre = (plateau.centre || 0) + 1;   /* l'engagement recule d'un cran */
+  } else {
+    plateau.pieces.push(o);
+    if (plateau.pieces.length === 1) plateau.centre = 0;
+  }
+  return o;
+}
+
+/* Les bouts qu'on aurait APRES un coup donne, sans rien modifier. */
+function boutsApres(plateau, piece, cote){
+  if (!plateau.pieces.length) return [piece[0], piece[1]];
+  var o = orienter(piece, plateau, cote);
+  return cote === "gauche" ? [o[0], boutDroite(plateau)] : [boutGauche(plateau), o[1]];
+}
+
+/* ──────────────────────────────────────────────── LA MEMOIRE DE TABLE ──
+   C'est la seule vraie technique du domino, et c'est elle qui separe un
+   joueur d'un ramasseur de pieces : quand quelqu'un BOUDE sur les bouts
+   3 et 5, il n'a AUCUNE piece portant un 3 ni un 5, et cela reste vrai
+   jusqu'a la fin de la donne. Le niveau difficile s'en sert, le moyen
+   l'ignore. */
+function memoireNeuve(joueurs){
+  /* tailles : combien de pieces chacun tient en main. Ce n'est pas de la
+     triche, c'est l'information publique de la table : autour d'un vrai jeu,
+     tout le monde voit le nombre de dominos des autres. */
+  var sans = [];
+  for (var j = 0; j < (joueurs || 3); j++) sans.push({});
+  return { sansValeur: sans, tailles: null, posees: [], mainConnue: [] };
+}
+function noterBoude(memoire, joueur, bouts){
+  for (var k = 0; k < bouts.length; k++){
+    if (bouts[k] === null) continue;
+    memoire.sansValeur[joueur][bouts[k]] = true;
+  }
+}
+function saitQueSansValeur(memoire, joueur, valeur){
+  return !!memoire.sansValeur[joueur][valeur];
+}
+
+/* ─────────────────────────────────────── LES PIECES QUE JE NE VOIS PAS ──
+   Vingt-huit moins la chaine moins ma main : voila ce qui se partage entre
+   les deux autres mains et les sept de cote. C'est la matiere premiere du
+   niveau difficile. */
+function piecesInvisibles(plateau, maMain){
+  var vues = {}, i, k;
+  for (i = 0; i < plateau.pieces.length; i++){
+    k = plateau.pieces[i]; vues[Math.min(k[0],k[1]) + "-" + Math.max(k[0],k[1])] = true;
+  }
+  for (i = 0; i < maMain.length; i++){
+    k = maMain[i]; vues[Math.min(k[0],k[1]) + "-" + Math.max(k[0],k[1])] = true;
+  }
+  var out = [], jeu = jeuComplet();
+  for (i = 0; i < jeu.length; i++){
+    if (!vues[jeu[i][0] + "-" + jeu[i][1]]) out.push(jeu[i]);
+  }
+  return out;
+}
+
+/* Une distribution possible des pieces invisibles, COHERENTE AVEC CE QUE LA
+   TABLE A DIT. Un joueur qui a boude sur les 3 et les 5 ne peut recevoir ici
+   aucune piece portant un 3 ni un 5 : c'est ce refus qui transforme un
+   souvenir en avantage. Renvoie null si la contrainte est trop serree pour
+   la donne tiree, et l'appelant retire alors un autre monde. */
+function tirerMonde(invisibles, tailles, memoire, moi, hasard){
+  var r = hasard || Math.random;
+  var pieces = melanger(invisibles.slice(), r);
+  /* AUTANT DE MAINS QUE DE JOUEURS. Ce tableau etait fige a trois : a la
+     table a quatre, la quatrieme main n'existait pas et le niveau difficile
+     plantait des qu'il tirait un monde. Un chiffre en dur dans un jeu qui
+     compte ses joueurs, c'est une panne qui attend son heure. */
+  var mains = [], talon = [];
+  for (var m0 = 0; m0 < tailles.length; m0++) mains.push([]);
+  var autres = [];
+  for (var j = 0; j < tailles.length; j++) if (j !== moi) autres.push(j);
+
+  for (var i = 0; i < pieces.length; i++){
+    var d = pieces[i], place = false;
+    /* On sert d'abord les mains, en sautant celles que la memoire interdit. */
+    for (var a = 0; a < autres.length && !place; a++){
+      var j2 = autres[a];
+      if (mains[j2].length >= tailles[j2]) continue;
+      if (saitQueSansValeur(memoire, j2, d[0]) || saitQueSansValeur(memoire, j2, d[1])) continue;
+      mains[j2].push(d); place = true;
+    }
+    if (!place) talon.push(d);
+  }
+  /* Si une main n'a pas pu etre remplie, le monde est incoherent : on le jette. */
+  for (var b = 0; b < autres.length; b++){
+    if (mains[autres[b]].length !== tailles[autres[b]]) return null;
+  }
+  return { mains: mains, talon: talon };
+}
+
+/* ─────────────────────────────────────── LA POLITIQUE DE SIMULATION ──
+   Une fin de partie ne se joue pas finement, elle se joue vite : chacun
+   pose sa piece la plus lourde. C'est assez juste pour departager des
+   coups, et assez rapide pour en tirer des centaines. */
+function coupGlouton(main, g, d, r){
+  var meilleur = null;
+  for (var i = 0; i < main.length; i++){
+    var p = main[i], cotes = [];
+    if (g === null){ cotes = ["droite"]; }
+    else {
+      if (p[0] === g || p[1] === g) cotes.push("gauche");
+      if (p[0] === d || p[1] === d) cotes.push("droite");
+    }
+    for (var c = 0; c < cotes.length; c++){
+      var note = points(p) * 2 + (estDouble(p) ? 5 : 0) + r() * 2;
+      if (!meilleur || note > meilleur.note) meilleur = { i: i, cote: cotes[c], note: note };
+    }
+  }
+  return meilleur;
+}
+
+/* La partie simulee ne manipule que les deux bouts et les trois mains : la
+   chaine entiere ne sert a rien pour savoir qui gagne. */
+function simulerFin(mains, g, d, tour, hasard){
+  var r = hasard || Math.random;
+  var N = mains.length, boudes = 0, tours = 0;
+  while (tours++ < 120){
+    var main = mains[tour];
+    if (!main.length) return tour;
+    var coup = coupGlouton(main, g, d, r);
+    if (!coup){
+      if (++boudes >= N) break;
+      tour = (tour + 1) % N;
+      continue;
+    }
+    boudes = 0;
+    var p = main[coup.i];
+    if (g === null){ g = p[0]; d = p[1]; }
+    else if (coup.cote === "gauche"){ g = (p[1] === g) ? p[0] : p[1]; }
+    else { d = (p[0] === d) ? p[1] : p[0]; }
+    main.splice(coup.i, 1);
+    if (!main.length) return tour;
+    tour = (tour + 1) % N;
+  }
+  /* Jeu mort : le moins de points l'emporte, l'egalite ne donne personne. */
+  var pts = [], j;
+  for (j = 0; j < N; j++) pts.push(pointsMain(mains[j]));
+  var mini = Math.min.apply(null, pts), gagnants = [];
+  for (j = 0; j < N; j++) if (pts[j] === mini) gagnants.push(j);
+  return gagnants.length === 1 ? gagnants[0] : null;
+}
+
+/* ────────────────────────────────────────────────────────── LES NIVEAUX ──
+   Facile pose au hasard. Moyenne suit des regles de bon sens, sans memoire.
+   Difficile TIRE LES MAINS CACHEES et joue le coup qui gagne le plus souvent :
+   c'est la seule technique qui marche vraiment dans un jeu ou l'on ne voit
+   pas le jeu des autres, et c'est elle qui manquait au premier jet. */
+var TIRAGES = 40;
+
+function choisirCoup(main, plateau, niveau, memoire, moi, hasard, tirages){
+  var coups = coupsPossibles(main, plateau);
+  if (!coups.length) return null;
+  if (coups.length === 1) return { i: coups[0].i, cote: coups[0].cote };
+  var r = hasard || Math.random;
+
+  if (niveau === "facile"){
+    /* Aucun calcul, aucune memoire : il pose un coup legal au hasard. Il ne
+       se sabote pas non plus, il ne cherche simplement rien. */
+    return coups[Math.floor(r() * coups.length)];
+  }
+
+  if (niveau === "moyenne") return coupMoyen(main, plateau, coups, r);
+  return coupDifficile(main, plateau, coups, memoire, moi, r, tirages || TIRAGES);
+}
+
+/* MOYENNE : du bon sens de joueur du dimanche. Les lourds partent, les
+   doubles aussi, et l'on evite de s'enfermer soi-meme. Aucune deduction. */
+function coupMoyen(main, plateau, coups, r){
+  var meilleur = null;
+  for (var c = 0; c < coups.length; c++){
+    var coup = coups[c], piece = main[coup.i], note = 0;
+    if (main.length === 1) note += 100000;
+    note += points(piece) * 3;
+    if (estDouble(piece)) note += 22;
+
+    var apres = boutsApres(plateau, piece, coup.cote);
+    var reste = main.slice(); reste.splice(coup.i, 1);
+    var repond = 0, tenu = 0;
+    for (var k = 0; k < reste.length; k++){
+      var q = reste[k];
+      if (q[0] === apres[0] || q[1] === apres[0] || q[0] === apres[1] || q[1] === apres[1]) repond++;
+      if (q[0] === apres[0] || q[1] === apres[0]) tenu++;
+      if (apres[0] !== apres[1] && (q[0] === apres[1] || q[1] === apres[1])) tenu++;
+    }
+    note += repond * 10;
+    if (!repond && reste.length) note -= 140;
+    note += tenu * 6;                       /* garder de quoi repondre a ses propres bouts */
+    note += r() * 2;
+    if (!meilleur || note > meilleur.note) meilleur = { i: coup.i, cote: coup.cote, note: note };
+  }
+  return meilleur;
+}
+
+/* DIFFICILE : on tire des mondes possibles, on joue le coup dans chacun, on
+   simule la fin, et l'on garde le coup qui gagne le plus souvent. Une donne
+   nulle vaut un demi-point : mieux vaut chirer que se faire mettre cochon. */
+function coupDifficile(main, plateau, coups, memoire, moi, r, tirages){
+  if (!memoire.tailles) return coupMoyen(main, plateau, coups, r);
+  var tailles = memoire.tailles.slice(), N = tailles.length;
+  var invisibles = piecesInvisibles(plateau, main);
+
+  var scores = [], c;
+  for (c = 0; c < coups.length; c++) scores.push(0);
+
+  var mondes = 0, essais = 0;
+  while (mondes < tirages && essais < tirages * 6){
+    essais++;
+    var monde = tirerMonde(invisibles, tailles, memoire, moi, r);
+    if (!monde) continue;
+    mondes++;
+    for (c = 0; c < coups.length; c++){
+      var coup = coups[c];
+      var piece = main[coup.i];
+      var apres = boutsApres(plateau, piece, coup.cote);
+      var mains = new Array(N);
+      for (var k = 0; k < N; k++){
+        mains[k] = k === moi ? main.slice() : monde.mains[k].slice();
+      }
+      mains[moi].splice(coup.i, 1);
+      if (!mains[moi].length){ scores[c] += 1; continue; }   /* ce coup finit la donne */
+      var gagnant = simulerFin(mains, apres[0], apres[1], (moi + 1) % N, r);
+      if (gagnant === moi) scores[c] += 1;
+      else if (gagnant === null) scores[c] += 0.5;
+    }
+  }
+  if (!mondes) return coupMoyen(main, plateau, coups, r);
+
+  var meilleur = null;
+  for (c = 0; c < coups.length; c++){
+    var note = scores[c] / mondes + r() * 0.001;
+    if (!meilleur || note > meilleur.note) meilleur = { i: coups[c].i, cote: coups[c].cote, note: note };
+  }
+  return meilleur;
+}
+
+/* ────────────────────────────────────────────────── UNE PARTIE COMPLETE ──
+   Cet objet porte tout l'etat. L'interface le lit, elle ne le recalcule
+   jamais : c'est ce qui garantit que l'ecran et la regle disent la meme
+   chose. */
+function nouvellePartie(options){
+  var o = options || {};
+  var hasard = o.hasard;
+  var N = o.joueurs || 3;
+  var donne = distribuer(hasard, N);
+  var eng = quiEngage(donne.mains);
+  var p = {
+    joueurs: N,
+    /* A QUATRE, on joue en EQUIPES DE DEUX, partenaires face a face : c'est
+       le domino de Guadeloupe, et c'est aussi ce que fait Ludicash avec son
+       SUD contre NORD. A deux et a trois, chacun pour soi. */
+    equipes: (N === 4),
+    mains: donne.mains,
+    talon: donne.talon,
+    plateau: plateauVide(),
+    tour: eng.joueur,
+    variante: o.variante || "chinois",
+    niveau: o.niveau || "moyenne",
+    niveaux: o.niveaux || null,          /* un niveau par joueur, sinon le meme pour tous */
+    memoire: memoireNeuve(N),
+    boudes: 0,
+    journal: [],
+    fini: false,
+    resultat: null,
+    engage: { joueur: eng.joueur, piece: eng.piece },
+    hasard: hasard || Math.random
+  };
+  return p;
+}
+
+/* Le coup d'engagement est force : le plus fort double, pose au centre. */
+function jouerEngagement(p){
+  var main = p.mains[p.tour], i;
+  for (i = 0; i < main.length; i++) if (memePiece(main[i], p.engage.piece)) break;
+  jouerCoup(p, i, "droite");
+}
+
+
+/* Un coup joue : on pose, on retire de la main, on remet le compteur de
+   boudes a zero, et on regarde si la donne est finie. */
+function jouerCoup(p, indice, cote){
+  if (p.fini) return false;
+  var main = p.mains[p.tour];
+  var piece = main[indice];
+  if (!piece) return false;
+  var pose = poser(p.plateau, piece, cote);
+  if (!pose) return false;
+
+  main.splice(indice, 1);
+  p.boudes = 0;
+  p.journal.push({ joueur: p.tour, piece: pose, cote: cote });
+
+  if (!main.length){ terminer(p, "main-vide", p.tour); return true; }
+  p.tour = (p.tour + 1) % p.joueurs;
+  return true;
+}
+
+/* Boude : on tape la table, le tour passe. C'est aussi le moment ou la
+   table apprend quelque chose, et le niveau difficile ne l'oublie plus. */
+function bouder(p){
+  if (p.fini) return false;
+  if (coupsPossibles(p.mains[p.tour], p.plateau).length) return false;  /* on ne boude pas quand on peut jouer */
+
+  noterBoude(p.memoire, p.tour, [boutGauche(p.plateau), boutDroite(p.plateau)]);
+  p.journal.push({ joueur: p.tour, boude: true });
+  p.boudes = (p.boudes || 0) + 1;
+
+  /* Le jeu est mort quand TOUS ont boude d'affilee, deux, trois ou quatre. */
+  if (p.boudes >= p.joueurs){ terminer(p, "jeu-mort", null); return true; }
+  p.tour = (p.tour + 1) % p.joueurs;
+  return true;
+}
+
+/* La pioche n'existe QUE dans la variante francaise. En chinois, ce qui
+   reste de cote ne se touche jamais. */
+function piocher(p){
+  if (p.variante !== "pioche" || !p.talon.length) return null;
+  var piece = p.talon.pop();
+  p.mains[p.tour].push(piece);
+  return piece;
+}
+
+/* Le tour d'un joueur qui ne peut pas jouer : il pioche tant qu'il le peut
+   (variante pioche), sinon il boude. Renvoie ce qui s'est passe. */
+function resoudreBlocage(p){
+  if (coupsPossibles(p.mains[p.tour], p.plateau).length) return "peut-jouer";
+  if (p.variante === "pioche"){
+    var pioches = 0;
+    while (p.talon.length && !coupsPossibles(p.mains[p.tour], p.plateau).length){
+      piocher(p); pioches++;
+    }
+    if (coupsPossibles(p.mains[p.tour], p.plateau).length) return "pioche:" + pioches;
+  }
+  bouder(p);
+  return "boude";
+}
+
+/* Fin de donne. Sur une main vide, celui qui a fini gagne et les deux
+   autres sont cochon. Sur un jeu mort, c'est le moins de points qui
+   l'emporte, et une egalite laisse la donne nulle. */
+/* A quatre, l'equipe est la parite du siege : les joueurs 0 et 2 forment une
+   paire, 1 et 3 l'autre. C'est la disposition d'une vraie table, ou l'on a
+   son partenaire en face et un adversaire de chaque cote. */
+function equipeDe(p, j){ return p.equipes ? (j % 2) : j; }
+
+function terminer(p, cause, gagnant){
+  p.fini = true;
+  var N = p.joueurs, j;
+  var pts = [];
+  for (j = 0; j < N; j++) pts.push(pointsMain(p.mains[j]));
+
+  if (cause === "main-vide"){
+    p.resultat = {
+      cause: cause, gagnant: gagnant, equipe: equipeDe(p, gagnant),
+      points: pts, nul: false
+    };
+    return p.resultat;
+  }
+
+  /* Jeu mort. A quatre, ce sont les points des DEUX PAIRES qu'on compare,
+     pas ceux des quatre joueurs : on gagne ensemble ou on perd ensemble. */
+  var scores = [];
+  if (p.equipes){
+    scores = [pts[0] + pts[2], pts[1] + pts[3]];
+  } else {
+    scores = pts.slice();
+  }
+  var mini = Math.min.apply(null, scores), exaequo = [];
+  for (j = 0; j < scores.length; j++) if (scores[j] === mini) exaequo.push(j);
+
+  p.resultat = {
+    cause: cause,
+    gagnant: exaequo.length === 1 ? (p.equipes ? null : exaequo[0]) : null,
+    equipe: exaequo.length === 1 ? exaequo[0] : null,
+    points: pts,
+    scores: scores,
+    nul: exaequo.length > 1,
+    exaequo: exaequo
+  };
+  return p.resultat;
+}
+
+/* Le tour d'un ordinateur, de bout en bout. */
+function jouerOrdinateur(p){
+  if (p.fini) return null;
+  var etat = resoudreBlocage(p);
+  if (etat === "boude") return { boude: true };
+  var niveau = p.niveaux ? p.niveaux[p.tour] : p.niveau;
+  p.memoire.tailles = [];
+  for (var t = 0; t < p.joueurs; t++) p.memoire.tailles.push(p.mains[t].length);
+  var coup = choisirCoup(p.mains[p.tour], p.plateau, niveau, p.memoire, p.tour, p.hasard);
+  if (!coup){ bouder(p); return { boude: true }; }
+  var piece = p.mains[p.tour][coup.i];
+  jouerCoup(p, coup.i, coup.cote);
+  return { piece: piece, cote: coup.cote };
+}
+
+/* Ce que le moteur expose. Le test s'en sert, l'interface aussi : il n'y a
+   donc qu'une seule regle du jeu dans ce fichier, pas deux. */
+var MOTEUR = {
+  jeuComplet: jeuComplet, points: points, estDouble: estDouble, pointsMain: pointsMain,
+  memePiece: memePiece, melanger: melanger, distribuer: distribuer, quiEngage: quiEngage,
+  plateauVide: plateauVide, boutGauche: boutGauche, boutDroite: boutDroite,
+  coupsPossibles: coupsPossibles, orienter: orienter, poser: poser, boutsApres: boutsApres,
+  memoireNeuve: memoireNeuve, noterBoude: noterBoude, saitQueSansValeur: saitQueSansValeur,
+  equipeDe: equipeDe,
+  choisirCoup: choisirCoup,
+  piecesInvisibles: piecesInvisibles, tirerMonde: tirerMonde, simulerFin: simulerFin,
+  coupMoyen: coupMoyen, coupDifficile: coupDifficile,
+  nouvellePartie: nouvellePartie, jouerEngagement: jouerEngagement, jouerCoup: jouerCoup,
+  bouder: bouder, piocher: piocher, resoudreBlocage: resoudreBlocage, terminer: terminer,
+  jouerOrdinateur: jouerOrdinateur, NOMS: NOMS, INITIALES: INITIALES
+};
+if (typeof window !== "undefined") window.MOTEUR = MOTEUR;
+if (typeof module !== "undefined" && module.exports) module.exports = MOTEUR;
+/* ═══════════════════════════════════════════════════════════════════════
+   UNE TABLE DE DOMINO EN LIGNE, L'SQz
+
+   C'est l'ARBITRE. Il distribue les vingt-huit pieces, il tient celles qu'on
+   met de cote, il valide chaque coup, et surtout IL NE MONTRE A CHACUN QUE SA
+   PROPRE MAIN. C'est tout ce qui manquait au jeu a distance : un lien partage
+   peut transporter un morpion, ou rien n'est cache, mais pas un domino.
+
+   Ce fichier ne connait ni WebSocket, ni Cloudflare, ni navigateur : il ne
+   fait que recevoir des demandes et rendre des etats. C'est ce qui le rend
+   verifiable ligne a ligne par test_serveur.js, sans rien deployer.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Le moteur se charge des deux facons : en Worker (import), et sous node pour
+   les tests (require). Une seule regle du jeu, partagee par les deux. */
+/* le moteur est deja dans la portee de la page */
+
+
+/* Combien de sieges par table, et ce qu'on en dit au salon. */
+var TABLES = {
+  2: { nom: "Domino européen",     places: 2 },
+  3: { nom: "Domino martiniquais", places: 3 },
+  4: { nom: "Domino caraïbéen",    places: 4 }
+};
+
+function Table(options){
+  var o = options || {};
+  this.id = o.id || "";
+  this.places = TABLES[o.joueurs || 3].places;
+  this.joueurs = o.joueurs || 3;
+  this.variante = o.variante || "chinois";
+  this.hasard = o.hasard || Math.random;
+  this.sieges = [];                 /* {nom, jeton, presentDepuis, robot} */
+  this.partie = null;
+  this.score = [0, 0, 0, 0];
+  this.serie = 0;
+  this.meneur = -1;
+  this.journal = [];                /* ce que la table a dit, pour le chat de partie */
+  this.finie = false;
+
+  /* LE DELAI DE COUP. Sans lui, un joueur qui ferme son telephone bloque la
+     table pour tout le monde, indefiniment : personne d'autre ne peut jouer,
+     et la partie ne se termine jamais. C'est le trou qu'avait notre premiere
+     version, et c'est exactement ce que le minuteur de Ludicash empeche.
+     L'arbitre reste pur : il ne compte pas le temps lui-meme, il expose une
+     echeance et une methode. C'est le Durable Object qui reveille la table. */
+  this.delaiCoup = o.delaiCoup || 60;    /* secondes accordees pour poser */
+  this.echeance = null;                  /* horodatage, pose par l'appelant */
+}
+
+/* Quand le tour change, l'appelant note jusqu'a quand on attend. */
+Table.prototype.armer = function(maintenant){
+  this.echeance = (this.partie && !this.partie.fini && !this.finie)
+    ? maintenant + this.delaiCoup * 1000 : null;
+  return this.echeance;
+};
+
+/* LE TEMPS EST TOMBE. On joue a sa place plutot que de laisser la table
+   mourir : un coup legal au hasard, ou boude s'il ne peut rien poser. C'est
+   ce que fait toute table en ligne serieuse, et c'est moins brutal que de
+   l'expulser. Trois expirations d'affilee et sa place passe a l'ordinateur,
+   sinon on rejouerait pour lui toute la partie. */
+Table.prototype.expirer = function(maintenant){
+  if (!this.partie || this.partie.fini || this.finie) return { rien: true };
+  if (this.echeance && maintenant < this.echeance) return { rien: true };
+  var siege = this.partie.tour;
+  var s = this.sieges[siege];
+  if (!s) return { rien: true };
+
+  var coups = MOTEUR.coupsPossibles(this.partie.mains[siege], this.partie.plateau);
+  if (coups.length){
+    var c = coups[Math.floor(this.hasard() * coups.length)];
+    var piece = this.partie.mains[siege][c.i];
+    MOTEUR.jouerCoup(this.partie, c.i, c.cote);
+    this.dire(this.nomDe(siege) + " a laissé filer le temps : le " +
+              piece[0] + "-" + piece[1] + " est parti tout seul.");
+  } else {
+    MOTEUR.bouder(this.partie);
+    this.dire(this.nomDe(siege) + " a laissé filer le temps, et il boudait de toute façon.");
+  }
+
+  s.retards = (s.retards || 0) + 1;
+  if (s.retards >= 3 && !s.robot){
+    s.robot = true;
+    this.dire(this.nomDe(siege) + " ne répond plus : l'ordinateur prend sa place.");
+  }
+  this.apresCoup();
+  return { joue: true, siege: siege };
+};
+
+/* ─────────────────────────────────────────────────────── s'asseoir ── */
+
+Table.prototype.complete = function(){
+  return this.sieges.length >= this.places;
+};
+
+Table.prototype.asseoir = function(nom, jeton){
+  /* ON RECONNAIT D'ABORD, ON PLACE ENSUITE. Un joueur qui perd le reseau et
+     revient doit retrouver SA place, meme si la table est pleine : elle est
+     pleine de lui. Chercher une place libre avant de le reconnaitre revenait
+     a l'expulser de sa propre partie a la premiere coupure. */
+  for (var i = 0; i < this.sieges.length; i++){
+    if (this.sieges[i].jeton === jeton){
+      if (this.sieges[i].robot){                 /* il revient, il reprend la main */
+        this.sieges[i].robot = false;
+        this.dire(this.sieges[i].nom + " revient à la table.");
+      }
+      return { siege: i };
+    }
+  }
+  if (this.complete()) return { erreur: "table pleine" };
+  var siege = this.sieges.length;
+  this.sieges.push({ nom: (nom || "Joueur").slice(0, 18), jeton: jeton, robot: false });
+  this.dire(this.sieges[siege].nom + " s'assoit.");
+  if (this.complete()) this.donneNeuve();
+  return { siege: siege };
+};
+
+/* Quelqu'un s'en va : l'ordinateur prend sa place plutot que de tuer la
+   partie pour les autres. C'est ce que fait toute table en ligne serieuse. */
+Table.prototype.lever = function(siege){
+  var s = this.sieges[siege];
+  if (!s || s.robot) return;
+  s.robot = true;
+  this.dire(s.nom + " a quitté la table : l'ordinateur prend sa place.");
+};
+
+Table.prototype.dire = function(texte){
+  this.journal.push(texte);
+  if (this.journal.length > 40) this.journal.shift();
+};
+
+/* ──────────────────────────────────────────────────── la donne ── */
+
+Table.prototype.donneNeuve = function(){
+  var niveaux = [];
+  for (var j = 0; j < this.joueurs; j++) niveaux.push("moyenne");
+  this.partie = MOTEUR.nouvellePartie({
+    joueurs: this.joueurs,
+    variante: this.variante,
+    niveaux: niveaux,
+    hasard: this.hasard
+  });
+  var e = this.partie.engage;
+  MOTEUR.jouerEngagement(this.partie);
+  this.dire(this.nomDe(e.joueur) + " engage avec le " + e.piece[0] + "-" + e.piece[1] + ".");
+  this.faireJouerLesRobots();
+};
+
+Table.prototype.nomDe = function(siege){
+  var s = this.sieges[siege];
+  return s ? (s.robot ? s.nom + " (ordinateur)" : s.nom) : "Place libre";
+};
+
+/* ────────────────────────────────────────────────────── un coup ── */
+
+Table.prototype.jouer = function(siege, indice, cote){
+  if (!this.partie || this.partie.fini) return { erreur: "aucune donne en cours" };
+  if (this.partie.tour !== siege) return { erreur: "ce n'est pas ton tour" };
+  var piece = this.partie.mains[siege][indice];
+  if (!piece) return { erreur: "cette pièce n'est pas dans ta main" };
+  if (!MOTEUR.jouerCoup(this.partie, indice, cote)) return { erreur: "ce coup est refusé" };
+  this.sieges[siege].retards = 0;                 /* il joue, il est bien la */
+  this.dire(this.nomDe(siege) + " pose le " + piece[0] + "-" + piece[1] + ".");
+  this.apresCoup();
+  return { ok: true };
+};
+
+Table.prototype.bouder = function(siege){
+  if (!this.partie || this.partie.fini) return { erreur: "aucune donne en cours" };
+  if (this.partie.tour !== siege) return { erreur: "ce n'est pas ton tour" };
+  if (!MOTEUR.bouder(this.partie)) return { erreur: "tu peux jouer, tu ne peux pas bouder" };
+  this.dire(this.nomDe(siege) + " boude.");
+  this.apresCoup();
+  return { ok: true };
+};
+
+Table.prototype.apresCoup = function(){
+  if (this.partie.fini){ this.clore(); return; }
+  this.faireJouerLesRobots();
+};
+
+/* Les sieges tenus par l'ordinateur jouent tout seuls, a la suite. */
+Table.prototype.faireJouerLesRobots = function(){
+  var garde = 0;
+  while (this.partie && !this.partie.fini && garde++ < 60){
+    var s = this.sieges[this.partie.tour];
+    if (!s || !s.robot) break;
+    var avant = this.partie.plateau.pieces.length;
+    var fait = MOTEUR.jouerOrdinateur(this.partie);
+    if (fait && fait.boude) this.dire(this.nomDe(this.partie.tour === 0 ? this.joueurs - 1 : this.partie.tour - 1) + " boude.");
+    else if (this.partie.plateau.pieces.length > avant) this.dire(this.nomDe(this.partie.tour) + " a joué.");
+  }
+  if (this.partie && this.partie.fini) this.clore();
+};
+
+/* ──────────────────────────────────────────────── la fin de donne ── */
+
+Table.prototype.clore = function(){
+  var r = this.partie.resultat;
+  var camp = this.partie.equipes ? r.equipe : r.gagnant;
+  if (camp !== null && camp !== undefined){
+    this.score[camp] = (this.score[camp] || 0) + 1;
+    this.serie = (this.meneur === camp) ? this.serie + 1 : 1;
+    this.meneur = camp;
+  } else {
+    this.serie = 0; this.meneur = -1;
+  }
+  if (r.cause === "main-vide") this.dire(this.nomDe(r.gagnant) + " a posé son dernier domino.");
+  else if (r.nul) this.dire("Le jeu est mort, la donne est chirée.");
+  else this.dire("Le jeu est mort, " + (this.partie.equipes ? "une équipe" : this.nomDe(r.gagnant)) + " l'emporte aux points.");
+
+  /* Trois donnes gagnees d'affilee et la table est prise : c'est cochon. */
+  if (this.serie >= 3){
+    this.finie = true;
+    this.dire("Trois d'affilée : la table est prise, cochon !");
+  }
+};
+
+/* Relancer une donne, une fois que tout le monde a vu le resultat. */
+Table.prototype.relancer = function(){
+  if (this.finie) return { erreur: "la table est finie" };
+  if (!this.partie || !this.partie.fini) return { erreur: "la donne n'est pas finie" };
+  this.donneNeuve();
+  return { ok: true };
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   L'ETAT VU PAR UN JOUEUR, et c'est ici que tout se joue.
+
+   On ne renvoie JAMAIS les mains des autres, ni le talon. Un joueur recoit
+   sa main, le plateau, le nombre de pieces de chacun, et rien de plus. Meme
+   si quelqu'un lit le reseau, il n'y trouvera pas le jeu de son voisin.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+Table.prototype.etatPour = function(siege){
+  var vue = {
+    id: this.id,
+    table: TABLES[this.joueurs].nom,
+    joueurs: this.joueurs,
+    variante: this.variante,
+    monSiege: siege,
+    places: [],
+    score: this.score.slice(0, this.partie && this.partie.equipes ? 2 : this.joueurs),
+    equipes: !!(this.partie && this.partie.equipes),
+    serie: this.serie,
+    meneur: this.meneur,
+    finie: this.finie,
+    journal: this.journal.slice(-8),
+    enAttente: !this.complete()
+  };
+
+  for (var j = 0; j < this.places; j++){
+    var s = this.sieges[j];
+    vue.places.push({
+      siege: j,
+      nom: s ? s.nom : null,
+      robot: s ? s.robot : false,
+      pieces: this.partie ? this.partie.mains[j].length : 0,
+      moi: j === siege
+    });
+  }
+
+  if (!this.partie) return vue;
+
+  vue.plateau = { pieces: this.partie.plateau.pieces, centre: this.partie.plateau.centre };
+
+  /* De quel cote la derniere piece a ete posee : l'ecran s'en sert pour lui
+     mettre son anneau blanc. Sans cette ligne, le joueur ne voit pas ce qui
+     vient d'etre joue. */
+  vue.dernierCote = null;
+  for (var k = this.partie.journal.length - 1; k >= 0; k--){
+    if (this.partie.journal[k].piece){ vue.dernierCote = this.partie.journal[k].cote; break; }
+  }
+  vue.tour = this.partie.tour;
+  vue.echeance = this.echeance;          /* jusqu'a quand la table attend */
+  vue.delaiCoup = this.delaiCoup;
+  vue.aMoi = (this.partie.tour === siege) && !this.partie.fini;
+  vue.fini = this.partie.fini;
+  vue.talon = (this.variante === "pioche") ? this.partie.talon.length : 0;
+
+  /* MA MAIN, et elle seule. */
+  vue.main = (this.partie.mains[siege] || []).map(function(p){ return [p[0], p[1]]; });
+  vue.coups = vue.aMoi ? MOTEUR.coupsPossibles(this.partie.mains[siege], this.partie.plateau) : [];
+
+  /* La donne finie, tout le monde retourne : c'est le geste de la table, et
+     c'est le SEUL moment ou les mains des autres deviennent publiques. */
+  if (this.partie.fini){
+    vue.resultat = this.partie.resultat;
+    vue.mainsOuvertes = this.partie.mains.map(function(m){
+      return m.map(function(p){ return [p[0], p[1]]; });
+    });
+    vue.points = this.partie.mains.map(function(m){ return MOTEUR.pointsMain(m); });
+  }
+  return vue;
+};
+
+/* Ce que le salon montre d'une table, sans rien reveler du jeu. */
+Table.prototype.resume = function(){
+  var assis = [];
+  for (var j = 0; j < this.sieges.length; j++) assis.push(this.sieges[j].nom);
+  return {
+    id: this.id,
+    table: TABLES[this.joueurs].nom,
+    joueurs: this.joueurs,
+    variante: this.variante,
+    assis: assis,
+    places: this.places,
+    libres: this.places - this.sieges.length,
+    commencee: !!this.partie,
+    finie: this.finie
+  };
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LA TABLE EN LIGNE, cote joueur
+
+   Le meme arbitre des deux cotes. Quand SERVEUR est vide, il tourne DANS la
+   page : on joue une vraie table en ligne, contre des places tenues par
+   l'ordinateur, avec exactement le protocole du serveur. Le jour ou le
+   Worker Cloudflare est en service, on renseigne son adresse ici et la meme
+   interface parle au vrai serveur, sans une ligne de plus.
+
+   C'est ce qui permet de verifier le circuit entier avant de deployer quoi
+   que ce soit, au lieu de livrer un bouton qui ne fait rien.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Adresse du serveur, deployee le 29/08/2026 sur le compte Cloudflare de
+   Pierre. Vider cette chaine remet l'arbitre DANS la page : c'est ce qui
+   permet de jouer et de tout verifier meme serveur eteint. */
+var SERVEUR = "https://lsqz-domino.domino-lsqz-serveur.workers.dev";
+
+var ligne = null;      /* { arbitre, ws, monSiege, vue } quand on est a une table */
+
+function enLigne(){ return !!ligne; }
+
+/* La table en ligne s'expose, comme le moteur et le dessin : c'est ce qui
+   permet de la verifier depuis le navigateur sans rien deviner. */
+if (typeof window !== "undefined"){
+  window.LIGNE = {
+    etat: function(){ return ligne; },
+    vue:  function(){ return ligne ? ligne.vue : null; },
+    arbitre: function(){ return ligne ? ligne.arbitre : null; },
+    Table: (typeof Table !== "undefined") ? Table : null
+  };
+}
+
+/* ─────────────────────────────────────────────────────────── le salon ── */
+
+function ouvrirSalon(){
+  /* LE SALON NE REDEMANDE PAS CE QUI EST DEJA CHOISI. Le joueur venait de
+     regler sa table et ses regles juste au-dessus, et le salon lui reposait
+     les deux memes questions avec des valeurs par defaut differentes : quatre
+     menus pour deux reglages. On recopie, il corrige s'il veut. */
+  $("#salon-joueurs").value  = $("#joueurs").value;
+  $("#salon-variante").value = $("#variante").value;
+  $("#salon").hidden = false;
+  document.body.classList.add("verrou");
+  listerTables();
+}
+function fermerSalon(){
+  $("#salon").hidden = true;
+  document.body.classList.remove("verrou");
+}
+
+function listerTables(){
+  var liste = $("#salon-tables");
+  if (!SERVEUR){
+    liste.innerHTML = '<p class="salon__note">Le serveur n\'est pas encore en service : ' +
+      'la table que tu ouvres ici tourne dans ton téléphone, avec les mêmes règles ' +
+      'et le même arbitre qu\'en ligne. Les places libres sont tenues par l\'ordinateur ' +
+      'jusqu\'à ce que de vrais joueurs puissent s\'asseoir.</p>';
+    return;
+  }
+  liste.innerHTML = '<p class="salon__note">Recherche des tables ouvertes…</p>';
+  fetch(SERVEUR + "/salon").then(function(r){ return r.json(); }).then(function(d){
+    var t = d.tables || [];
+    if (!t.length){ liste.innerHTML = '<p class="salon__note">Aucune table ouverte. Ouvre la tienne.</p>'; return; }
+    var html = "";
+    for (var i = 0; i < t.length; i++){
+      html += '<div class="salon__ligne"><span><b>' + t[i].table + '</b>' +
+        (t[i].assis.length ? ' &nbsp;' + t[i].assis.join(", ") : "") +
+        '</span><span class="salon__places">' + t[i].libres + ' place' +
+        (t[i].libres > 1 ? "s" : "") + '</span>' +
+        (t[i].libres > 0 ? '<button data-rejoindre="' + t[i].id + '">Rejoindre</button>' : '') +
+        '</div>';
+    }
+    liste.innerHTML = html;
+  }).catch(function(){
+    liste.innerHTML = '<p class="salon__note">Le serveur ne répond pas. Réessaie dans un instant.</p>';
+  });
+}
+
+/* ────────────────────────────────────────────────── ouvrir une table ── */
+
+/* ON NE S'ASSOIT PAS SANS DIRE SON NOM. C'est la premiere chose que demande
+   Ludicash, et c'est du bon sens a une table : les autres joueurs doivent
+   savoir qui arrive. Un champ vide devenait « Joueur », et trois « Joueur »
+   a la meme table ne veulent plus rien dire. */
+function monNom(){
+  var n = ($("#salon-nom").value || "").trim();
+  if (!n) return null;
+  try { localStorage.setItem("lsqz-domino-nom", n); } catch (e) {}
+  return n.slice(0, 18);
+}
+
+/* Renvoie le nom, ou signale au joueur qu'il en faut un et rend la main. */
+function exigerLeNom(){
+  var n = monNom();
+  if (n) { $("#salon-nom").classList.remove("manque"); return n; }
+  var champ = $("#salon-nom");
+  champ.classList.add("manque");
+  champ.focus();
+  var note = $("#salon-nom-note");
+  if (note) note.textContent = "Il faut un nom pour t'asseoir à la table.";
+  return null;
+}
+function monJeton(){
+  var j;
+  try { j = localStorage.getItem("lsqz-domino-jeton"); } catch (e) {}
+  if (!j){
+    j = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    try { localStorage.setItem("lsqz-domino-jeton", j); } catch (e) {}
+  }
+  return j;
+}
+
+function ouvrirTable(joueurs, variante){
+  if (!exigerLeNom()) return;
+  if (SERVEUR){
+    fetch(SERVEUR + "/creer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ joueurs: joueurs, variante: variante })
+    }).then(function(r){ return r.json(); })
+      .then(function(d){ if (d.id) rejoindreTable(d.id, joueurs, variante); })
+      .catch(function(){ dire("Le serveur ne répond pas."); });
+    return;
+  }
+
+  /* Sans serveur : l'arbitre tourne ici, et les autres places sont tenues
+     par l'ordinateur, exactement comme une place laissee vacante en ligne. */
+  var arbitre = new Table({ id: "locale", joueurs: joueurs, variante: variante });
+  var place = arbitre.asseoir(exigerLeNom(), monJeton());
+  for (var j = 1; j < joueurs; j++){
+    arbitre.asseoir(MOTEUR.NOMS[j], "robot" + j);
+    arbitre.sieges[j].robot = true;
+  }
+  arbitre.faireJouerLesRobots();
+  ligne = { arbitre: arbitre, ws: null, monSiege: place.siege };
+  fermerSalon();
+  rafraichirLigne();
+}
+
+function rejoindreTable(id, joueurs, variante){
+  var nom = exigerLeNom();
+  if (!nom) return;
+  var url = SERVEUR.replace(/^http/, "ws") + "/table/" + id +
+    "?nom=" + encodeURIComponent(nom) + "&jeton=" + encodeURIComponent(monJeton()) +
+    "&joueurs=" + (joueurs || 3) + "&variante=" + (variante || "chinois");
+  var ws = new WebSocket(url);
+  ligne = { arbitre: null, ws: ws, monSiege: -1 };
+  fermerSalon();
+  dire("Connexion à la table…");
+
+  ws.onmessage = function(ev){
+    var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.t === "place")  ligne.monSiege = m.siege;
+    if (m.t === "refus")  { dire(m.raison); quitterLaTable(); }
+    if (m.t === "erreur") dire(m.texte);
+    if (m.t === "etat")   afficherVue(m.vue);
+  };
+  ws.onclose = function(){ if (ligne) dire("La table s'est refermée."); };
+  ws.onerror = function(){ dire("Le serveur ne répond pas."); };
+}
+
+function quitterLaTable(){
+  if (ligne && ligne.ws) { try { ligne.ws.close(); } catch (e) {} }
+  clearTimeout(reveil); reveil = null;
+  arreterSablier();
+  ligne = null;
+  $("#quitter").hidden = true;
+  donneNeuve();                                   /* on retombe sur la table locale */
+}
+
+/* ──────────────────────────────────────── ce que le serveur nous dit ── */
+
+/* Le reveil de l'arbitre LOCAL. En ligne c'est le Durable Object qui arme le
+   sablier et qui rappelle la table a l'echeance ; ici il n'y a personne pour
+   le faire, et le compteur restait donc vide alors que tout etait pret cote
+   arbitre. Meme regle des deux cotes : on arme, et on se reveille. */
+var reveil = null;
+
+function armerArbitreLocal(){
+  clearTimeout(reveil); reveil = null;
+  if (!ligne || !ligne.arbitre) return;
+  var echeance = ligne.arbitre.armer(Date.now());
+  if (!echeance) return;
+  reveil = setTimeout(function(){
+    if (!ligne || !ligne.arbitre) return;
+    ligne.arbitre.expirer(Date.now());
+    rafraichirLigne();
+  }, Math.max(250, echeance - Date.now()));
+}
+
+function rafraichirLigne(){
+  if (!ligne || !ligne.arbitre) return;
+  armerArbitreLocal();
+  afficherVue(ligne.arbitre.etatPour(ligne.monSiege));
+}
+
+/* On refabrique une "partie" a partir de la vue recue, pour que TOUT le
+   dessin existant fonctionne sans rien changer : la table, le serpentin, les
+   places, les mains. Les mains des autres n'ont que leur nombre de pieces,
+   c'est tout ce que le serveur en dit. */
+function afficherVue(vue){
+  if (!ligne) return;
+  ligne.vue = vue;
+  if (vue.monSiege !== undefined) ligne.monSiege = vue.monSiege;
+
+  /* Une donne qui repart efface ce que la precedente a laisse sous les noms.
+     En ligne, donneNeuve() n'est jamais appelee : c'est ici qu'il faut le
+     faire, sinon les totaux de points restent affiches en pleine partie. */
+  if (!vue.fini){
+    var voix = document.querySelectorAll(".place__dit");
+    for (var q = 0; q < voix.length; q++){
+      if (/points/.test(voix[q].textContent)) voix[q].textContent = "";
+    }
+  }
+
+  if (vue.enAttente){
+    dire("En attente des autres joueurs… " +
+      vue.places.filter(function(p){ return p.nom; }).length + " sur " + vue.joueurs + ".");
+  }
+
+  var mains = [];
+  for (var j = 0; j < vue.joueurs; j++){
+    if (vue.mainsOuvertes) mains.push(vue.mainsOuvertes[j]);
+    else if (j === vue.monSiege) mains.push(vue.main || []);
+    else {
+      var cachees = [], n = vue.places[j] ? vue.places[j].pieces : 0;
+      for (var k = 0; k < n; k++) cachees.push([0, 0]);   /* le nombre, rien d'autre */
+      mains.push(cachees);
+    }
+  }
+
+  var journal = [];
+  if (vue.dernierCote) journal.push({ piece: true, cote: vue.dernierCote });
+
+  partie = {
+    joueurs: vue.joueurs,
+    equipes: vue.equipes,
+    variante: vue.variante,
+    plateau: vue.plateau || MOTEUR.plateauVide(),
+    mains: mains,
+    talon: new Array(vue.talon || 0),
+    tour: vue.tour,
+    fini: !!vue.fini,
+    resultat: vue.resultat || null,
+    journal: journal,
+    enLigne: true
+  };
+
+  /* LE TITRE SUIT LA TABLE, PAS MES MENUS. C'est l'arbitre qui a decide du
+     nombre de places et des regles quand la table a ete ouverte : rejoindre
+     une table a quatre en laissant « Domino martiniquais » au-dessus, c'est
+     mentir au joueur sur le jeu qu'il est en train de jouer. */
+  majTitre(vue.joueurs, vue.variante);
+
+  $("#quitter").hidden = false;
+  dessiner();
+
+  /* LE CHRONO VAUT SURTOUT EN LIGNE. Hors ligne on attend qui l'on veut ;
+     en ligne, un joueur parti bloque la table de tout le monde. */
+  arreterChrono();
+  if (vue.aMoi) lancerChrono();
+
+  /* Et le compteur de la table, visible par TOUT LE MONDE sous le joueur au
+     trait : c'est lui qui explique pourquoi un domino part tout seul. */
+  lancerSablier();
+  if (vue.journal && vue.journal.length && !vue.enAttente) dire(vue.journal[vue.journal.length - 1]);
+  if (vue.fini && !vue.finie) $("#rejouer").textContent = "Donne suivante";
+  else $("#rejouer").textContent = "Nouvelle partie";
+}
+
+/* ────────────────────────────────────────────── nos coups, en ligne ── */
+
+function envoyerEnLigne(message){
+  if (!ligne) return;
+  if (ligne.ws){ try { ligne.ws.send(JSON.stringify(message)); } catch (e) {} return; }
+  /* arbitre local : on l'appelle directement, c'est le meme code */
+  var a = ligne.arbitre, r = null;
+  if (message.t === "jouer")         r = a.jouer(ligne.monSiege, message.i, message.cote);
+  else if (message.t === "bouder")   r = a.bouder(ligne.monSiege);
+  else if (message.t === "relancer") r = a.relancer();
+  if (r && r.erreur) dire(r.erreur);
+  rafraichirLigne();
+}
+
+/* Le nom d'une place : celui du serveur en ligne, celui du pays hors ligne. */
+function nomDeLaPlace(j){
+  if (ligne && ligne.vue && ligne.vue.places[j] && ligne.vue.places[j].nom){
+    return ligne.vue.places[j].nom;
+  }
+  return MOTEUR.NOMS[j];
+}
+function initialeDeLaPlace(j){
+  var n = nomDeLaPlace(j);
+  return (ligne && ligne.vue) ? n.charAt(0).toUpperCase() : MOTEUR.INITIALES[j];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   L'INTERFACE
+   Elle ne connait aucune regle : elle lit l'etat du moteur et le dessine.
+   Toute question de regle se pose au moteur, jamais a l'ecran.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function $(s){ return document.querySelector(s); }
+
+var partie = null;
+var choisi = null;                    /* le domino que le joueur vient de toucher */
+var minuteur = null, restant = 0;
+var occupe = false;                   /* vrai pendant qu'un ordinateur reflechit */
+
+var CLE = "lsqz-domino-v1";
+function lire(){
+  try { return JSON.parse(localStorage.getItem(CLE)) || {}; }
+  catch (e) { return {}; }
+}
+function sauver(){ try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) {} }
+var etat = lire();
+if (typeof etat.parties !== "number") etat.parties = 0;
+if (typeof etat.forme !== "boolean") etat.forme = false;
+if (!etat.tables) etat.tables = {};
+function tableCourante(){
+  var cle = clefScore();
+  if (!etat.tables[cle]) etat.tables[cle] = { score: [0,0,0,0], serie: 0, meneur: -1 };
+  return etat.tables[cle];
+}
+
+/* ────────────────────────────────────────────── dessiner un domino ── */
+var PLACES = {
+  0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8],
+  4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8]
+};
+
+function faceHTML(v){
+  var pts = PLACES[v], html = "";
+  for (var c = 0; c < 9; c++) html += pts.indexOf(c) === -1 ? '<i></i>' : '<i class="p"></i>';
+  return '<span class="d__moitie">' + html + '</span>';
+}
+
+/* ══════════════════════════════════════════════════════ LE SERPENTIN ══
+   La chaine ne file pas droit : elle part du milieu, avance jusqu'au bord,
+   tourne, et revient. La branche de droite remonte, celle de gauche
+   descend, si bien qu'elles ne se rencontrent jamais.
+
+   Deux details qui font tout le realisme :
+   . un DOUBLE se pose EN TRAVERS de la chaine, comme sur une vraie table ;
+   . dans un coude, les deux faces s'inversent, parce que le bout d'entree
+     de la piece n'est plus a gauche mais en bas (ou en haut). Sans cette
+     inversion, la chaine serait juste, mais elle se lirait de travers. */
+var UNITE = 26;            /* le cote court d'un domino, en pixels de reference */
+var LONG  = UNITE * 2;
+var JEU   = 2;             /* le cheveu de jour entre deux pieces */
+
+var PAS   = UNITE / 2;     /* le pas de la grille : une demi-largeur de domino */
+var LIMITE_PAS = 14;       /* on tourne a 14 pas du centre, comme chez eux */
+var LIM   = LIMITE_PAS * PAS;
+
+/* La chaine tourne en fonction de la place REELLE : sur un telephone, une
+   rangee courte vaut mieux qu'une longue rangee ecrasee par la mise a
+   l'echelle. On regle donc la limite sur la largeur du tapis, pas sur une
+   valeur en dur. */
+function reglerLimite(largeurAire){
+  /* On compte en PAS de grille, pas en pixels : la rangee tourne a tant de
+     pas du centre. Chez Ludicash c'est 14 sur un plateau large ; sur un
+     telephone il en faut moins, sinon la chaine sort de la table. */
+  var pas = Math.round((largeurAire / 2 - 14) / PAS);
+  LIMITE_PAS = Math.max(5, Math.min(14, pas));
+  LIM = LIMITE_PAS * PAS;
+  return LIM;
+}
+
+/* L'ORIENTATION D'UNE PIECE. Un double se pose EN TRAVERS de la chaine, et
+   c'est vrai partout : dans une rangee il se dresse, dans une colonne il se
+   couche. Les autres suivent le sens de la chaine. */
+function mesurer(dir, estDouble){
+  /* Une piece ordinaire se pose DANS le sens de la marche, un double EN
+     TRAVERS. C'est la seule regle, elle vaut dans une rangee comme dans une
+     descente, et c'est celle de Ludicash. */
+  var horiz = (dir === "E" || dir === "W");
+  var couche = horiz ? !estDouble : estDouble;
+  return { couche: couche, w: couche ? LONG : UNITE, h: couche ? UNITE : LONG };
+}
+
+
+/* DANS QUEL SENS SE LIT UNE PIECE. La chaine est rangee de gauche a droite,
+   et chaque piece a un bout d'ENTREE, celui qui touche la piece deja posee.
+   Sur la branche de droite ce bout est la premiere face, sur celle de gauche
+   la seconde. Selon la direction ou l'on avance, ce bout tombe a gauche, a
+   droite, en haut ou en bas, et il faut alors echanger les deux faces. */
+var LECTURE = {
+  droite: { E: false, N: true,  W: true,  S: false },
+  gauche: { W: false, S: true,  E: true,  N: false }
+};
+
+function poserBranche(pieces, out, i, fin, pas, prec, dirDepart, vertical, sens){
+  /* ═══════════════════════════════════════════════════════════════════
+     LE PLACEMENT, SUR LA GRILLE DE LUDICASH.
+
+     Releve le 29/08/2026 dans leur client de jeu (calculPlacement) ET
+     verifie sur une table reelle jouee par Pierre. Ce n'est plus une
+     deduction : c'est leur regle, transcrite.
+
+     LE PAS DE GRILLE VAUT UNE DEMI-LARGEUR DE DOMINO. Une piece couchee
+     mesure 4 pas de long et 2 de haut, une piece debout 2 de large et 4
+     de haut. Tout se compte en pas, jamais en pixels : c'est ce qui fait
+     que les pieces se touchent exactement, sans jour ni chevauchement.
+
+     LES QUATRE REGLES :
+     1. UN DOUBLE NE TOURNE JAMAIS. Il garde la direction en cours et se
+        pose EN TRAVERS de la marche. C'est l'erreur qui m'a fait tourner
+        en rond sept fois : je faisais tourner la chaine sur un double.
+     2. On tourne quand la rangee atteint 14 pas du centre.
+     3. LE COUDE FAIT UNE SEULE PIECE. Des que la descente atteint 3 pas,
+        la rangee repart a l'horizontale, dans l'autre sens.
+     4. Une piece ordinaire se pose DANS le sens de la marche, un double
+        EN TRAVERS. Un double couche dans une descente n'a rien d'ambigu :
+        ses deux moities portent le meme chiffre.
+     ═══════════════════════════════════════════════════════════════════ */
+  var dir = dirDepart;
+  var rX = prec.rX, rY = prec.rY;
+
+  for (; i !== fin; i += pas){
+    var p = pieces[i];
+    var est2 = (p[0] === p[1]);
+    var dirPrec = dir;
+    var prec2 = prec.est2;
+
+    /* ── 1. LA DIRECTION ────────────────────────────────────────────── */
+    if (est2){
+      /* un double ne tourne jamais : il reste dans la marche en cours */
+    } else if (dir === "E" && rX >= LIMITE_PAS){
+      dir = vertical;
+    } else if (dir === "W" && rX <= -LIMITE_PAS){
+      dir = vertical;
+    } else if ((dir === "N" || dir === "S") && Math.abs(rY) >= 3){
+      dir = (rX > 0) ? "W" : "E";                /* la rangee repart */
+    }
+
+    var horiz = (dir === "E" || dir === "W");
+    var horizPrec = (dirPrec === "E" || dirPrec === "W");
+    var vire = (horiz !== horizPrec);
+
+    /* ── 2. LA CASE, EN PAS DE GRILLE ───────────────────────────────── */
+    if (!vire){
+      /* tout droit : 4 pas, ou 3 des qu'un double se met en travers */
+      var avance = (prec2 || est2) ? 3 : 4;
+      if (horiz) rX += avance * (dir === "W" ? -1 : 1);
+      else       rY += avance * (dir === "N" ? -1 : 1);
+    } else if (horizPrec){
+      /* la rangee s'arrete, on prend le coude */
+      rX += (prec2 ? 0 : est2 ? -3 : -1) * (dirPrec === "E" ? -1 : 1);
+      rY += (prec2 ? 4 : est2 ? 0 : 3) * (dir === "N" ? -1 : 1);
+    } else {
+      /* on sort du coude, la rangee repart */
+      rX += (prec2 ? -4 : est2 ? 0 : -1) * (dir === "E" ? -1 : 1);
+      rY += (prec2 ? 0 : 3) * (dirPrec === "N" ? -1 : 1);
+    }
+
+    /* ── 3. LA FORME ET LA PLACE EN PIXELS ──────────────────────────── */
+    var m = mesurer(dir, est2);
+    out[i] = {
+      piece: p,
+      x: rX * PAS - m.w / 2,
+      y: rY * PAS - m.h / 2,
+      w: m.w, h: m.h, couche: m.couche,
+      dir: dir, inverse: LECTURE[sens][dir]
+    };
+    prec = { rX: rX, rY: rY, est2: est2 };
+  }
+}
+
+function disposerChaine(plateau){
+  var pieces = plateau.pieces, n = pieces.length;
+  if (!n) return [];
+  var centre = Math.min(Math.max(plateau.centre || 0, 0), n - 1);
+  var out = new Array(n);
+
+  /* la piece d'engagement, plantee au milieu de la table */
+  var eng = pieces[centre], est2 = (eng[0] === eng[1]);
+  var m = mesurer("E", est2);   /* un double d'engagement se dresse, comme chez eux */
+  out[centre] = { piece: eng, x: -m.w / 2, y: -m.h / 2, w: m.w, h: m.h,
+                  couche: m.couche, dir: "E", inverse: false };
+
+  /* La piece d'engagement occupe la case (0,0). Les deux branches en
+     partent, l'une vers l'est qui remonte, l'autre vers l'ouest qui
+     descend, si bien qu'elles ne se rencontrent jamais. */
+  var depart = { rX: 0, rY: 0, est2: est2 };
+  poserBranche(pieces, out, centre + 1, n,  +1, depart, "E", "N", "droite");
+  poserBranche(pieces, out, centre - 1, -1, -1, depart, "W", "S", "gauche");
+
+  /* Les deux faces, dans l'ordre ou elles s'affichent. */
+  for (var k = 0; k < out.length; k++){
+    var o = out[k]; if (!o) continue;
+    o.faces = o.inverse ? [o.piece[1], o.piece[0]] : [o.piece[0], o.piece[1]];
+  }
+  return out;
+}
+
+/* ─────────────────────────────────────────────────── dessiner la table ── */
+function indexDernierPose(){
+  if (!partie.journal.length) return -1;
+  for (var k = partie.journal.length - 1; k >= 0; k--){
+    if (partie.journal[k].piece){
+      return partie.journal[k].cote === "gauche" ? 0 : partie.plateau.pieces.length - 1;
+    }
+  }
+  return -1;
+}
+
+function dessinerChaine(){
+  var c = $("#chaine"), aire = $(".aire");
+  reglerLimite(aire.clientWidth || 320);
+  var poses = disposerChaine(partie.plateau);
+
+  if (!poses.length){
+    c.style.transform = ""; c.style.width = ""; c.style.height = "";
+    c.innerHTML = '<div class="chaine__vide">La table est vide. Le plus fort double engage.</div>';
+    return;
+  }
+
+  var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, i;
+  for (i = 0; i < poses.length; i++){
+    var o = poses[i]; if (!o) continue;
+    if (o.x < x0) x0 = o.x;
+    if (o.y < y0) y0 = o.y;
+    if (o.x + o.w > x1) x1 = o.x + o.w;
+    if (o.y + o.h > y1) y1 = o.y + o.h;
+  }
+  var W = x1 - x0, H = y1 - y0, dernier = indexDernierPose(), html = "";
+
+  for (i = 0; i < poses.length; i++){
+    var q = poses[i]; if (!q) continue;
+    var a = q.faces[0], b = q.faces[1];
+    html += '<span class="d d--pose ' + (q.couche ? "d--couche" : "d--debout") +
+      (i === dernier ? " d--dernier" : "") + '" role="listitem"' +
+      ' aria-label="domino ' + q.piece[0] + ' ' + q.piece[1] + '"' +
+      ' style="left:' + Math.round(q.x - x0) + 'px;top:' + Math.round(q.y - y0) +
+      'px;width:' + q.w + 'px;height:' + q.h + 'px">' + faceHTML(a) + faceHTML(b) + '</span>';
+  }
+  c.innerHTML = html;
+  c.style.width = W + "px";
+  c.style.height = H + "px";
+
+  /* On recule la chaise plutot que de faire defiler : toute la chaine reste
+     visible d'un coup d'oeil, quitte a ce que les pieces retrecissent. */
+  var dispoW = aire.clientWidth, dispoH = aire.clientHeight;
+  var k = Math.min(dispoW / (W + 10), dispoH / (H + 10), 1.3);
+  if (!isFinite(k) || k <= 0) k = 1;
+  c.style.transform = "scale(" + k.toFixed(3) + ")";
+}
+
+function dessinerMain(){
+  var m = $("#main"), main = partie.mains[monSiege()];
+  var moi = $("#siege-bas .place__dit");
+  if (moi) moi.textContent = partie.fini ? (MOTEUR.pointsMain(main) + " points") : "";
+  var jouables = {}, coups = partie.fini ? [] : MOTEUR.coupsPossibles(main, partie.plateau);
+  if (partie.tour === monSiege() && !partie.fini){
+    for (var k = 0; k < coups.length; k++) jouables[coups[k].i] = true;
+  }
+  var monTour = partie.tour === monSiege() && !partie.fini;
+  var html = "";
+  for (var i = 0; i < main.length; i++){
+    var cl = "d d--main d--debout" +
+      (jouables[i] ? " d--jouable" : (monTour ? " hors" : "")) +
+      (choisi === i ? " d--choisi" : "");
+    html += '<span data-i="' + i + '"><span class="' + cl + '" role="listitem"' +
+      ' aria-label="domino ' + main[i][0] + ' ' + main[i][1] + '">' +
+      faceHTML(main[i][0]) + faceHTML(main[i][1]) + '</span></span>';
+  }
+  m.innerHTML = html || '<span class="chaine__vide">Ta main est vide.</span>';
+}
+
+/* OU S'ASSOIT-ON. Toi toujours en bas, et les autres dans le sens des
+   aiguilles d'une montre vu de dessus, c'est a dire bas, gauche, haut,
+   droite. A deux l'adversaire est donc en face, a trois on t'encadre, a
+   quatre ton partenaire te fait face. */
+var SIEGES = { 2: ["bas", "haut"], 3: ["bas", "gauche", "droite"],
+               4: ["bas", "gauche", "haut", "droite"] };
+var TOUS_SIEGES = ["bas", "gauche", "haut", "droite"];
+
+/* Le siege du joueur j, vu de MA chaise : je suis toujours en bas, et les
+   autres se placent dans l'ordre a partir de moi. En ligne, mon numero de
+   siege est celui que le serveur m'a donne, pas forcement zero. */
+function siegeDe(j){
+  var N = partie ? partie.joueurs : 3;
+  var plan = SIEGES[N];
+  var relatif = ((j - monSiege()) % N + N) % N;
+  return plan[relatif] || null;
+}
+function placeDe(j){
+  var pos = siegeDe(j);
+  return pos ? $("#siege-" + pos) : null;
+}
+
+function dessinerPlaces(){
+  var N = partie.joueurs, plan = SIEGES[N];
+  for (var s = 0; s < TOUS_SIEGES.length; s++){
+    var pos = TOUS_SIEGES[s], el = $("#siege-" + pos);
+    var relatif = plan.indexOf(pos);
+    el.hidden = (relatif === -1);
+    if (relatif === -1) continue;
+    var j = (monSiege() + relatif) % N;
+
+    var n = partie.mains[j].length;
+    el.querySelector(".jeton").firstChild.nodeValue = initialeDeLaPlace(j);
+    el.querySelector(".jeton__n").textContent = n;
+    el.querySelector(".place__nom").textContent = nomDeLaPlace(j);
+    el.classList.toggle("actif", partie.tour === j && !partie.fini);
+    var tps = el.querySelector(".place__temps");
+    if (tps && (partie.tour !== j || partie.fini)) { tps.textContent = ""; tps.classList.remove("presse"); }
+    /* a quatre, ton partenaire est le joueur d'en face : meme parite de siege */
+    el.classList.toggle("partenaire", partie.equipes && j !== monSiege()
+                        && ((j - monSiege()) % 2) === 0);
+
+    var dos = el.querySelector(".place__dos");
+    if (!dos) continue;
+    if (j === monSiege()){ dos.innerHTML = ""; continue; }
+
+    /* LA DONNE FINIE, TOUT LE MONDE SE RETOURNE. C'est le geste de la table :
+       le jeu est mort, chacun ouvre sa main et l'on compte a voix haute. Sans
+       lui, le joueur doit croire le total sur parole. */
+    if (partie.fini){
+      /* CHACUN OUVRE SON JEU DANS LE SENS DE SA PLACE, a la fin comme
+         pendant la donne. Celui d'EN FACE dresse ses dominos comme moi, les
+         voisins de gauche et de droite les gardent couches le long de leur
+         bord. On les montrait tous a plat, y compris celui d'en face. */
+      var debout = (pos === "haut");
+      var ouvert = "", main = partie.mains[j];
+      for (var q = 0; q < main.length; q++){
+        ouvert += '<span class="d d--mini ' + (debout ? "d--debout" : "d--couche") +
+          '" aria-label="domino ' + main[q][0] + ' ' + main[q][1] + '">' +
+          faceHTML(main[q][0]) + faceHTML(main[q][1]) + '</span>';
+      }
+      /* CELUI QUI A POSE SA DERNIERE PIECE NE MONTRE PAS UNE MAIN VIDE :
+         il crie DOMINO. C'est le mot de la table, et c'est ce qu'on lit. */
+      if (!main.length) ouvert = '<span class="place__domino">DOMINO !</span>';
+      dos.innerHTML = ouvert;
+      var pts = el.querySelector(".place__dit");
+      if (pts) pts.textContent = MOTEUR.pointsMain(main) + " points";
+      continue;
+    }
+
+    var html = "";
+    for (var k = 0; k < n; k++) html += '<span class="dos"></span>';
+    dos.innerHTML = html;
+  }
+}
+
+function dessinerScore(){
+  /* EN LIGNE, LE SCORE EST CELUI DE LA TABLE, PAS LE MIEN. On affichait ici
+     le compte local des parties contre l'ordinateur, meme assis a une table
+     en ligne : le joueur voyait un score qui n'etait celui de personne.
+     C'est l'arbitre qui tient le score d'une table en ligne, et lui seul. */
+  var vue = enLigne() ? LIGNE.vue() : null;
+  var s = vue ? { score: vue.score, serie: vue.serie, meneur: vue.meneur }
+              : tableCourante();
+  var html = "";
+  if (partie.equipes){
+    html += '<span>Vous deux <b>' + (s.score[0] || 0) + '</b></span>';
+    html += '<span>Eux <b>' + (s.score[1] || 0) + '</b></span>';
+  } else {
+    for (var j = 0; j < partie.joueurs; j++){
+      html += '<span>' + nomDeLaPlace(j) + ' <b>' + (s.score[j] || 0) + '</b></span>';
+    }
+  }
+  if (s.meneur >= 0 && s.serie > 0){
+    var pluriel = partie.equipes;
+    var qui = pluriel ? (s.meneur === 0 ? "Vous deux" : "Eux") : nomDeLaPlace(s.meneur);
+    var verbe = pluriel ? " ont mis cochon !" : " a mis cochon !";
+    html += s.serie >= 3
+      ? '<span class="cochon">' + qui + verbe + '</span>'
+      : '<span>' + qui + " : " + s.serie + " d'affilée</span>";
+  }
+  $("#score").innerHTML = html;
+}
+
+/* Chaque table garde son propre compte : trois parties gagnees a trois ne
+   valent pas trois parties gagnees a quatre, et melanger les deux ferait un
+   score qui ne veut rien dire. */
+function clefScore(){
+  return (partie && partie.equipes ? "eq" : "ch") + (partie ? partie.joueurs : 3);
+}
+
+/* LA NOMENCLATURE, posee par Pierre le 28/08/2026 : le nom de la table suit
+   le nombre de joueurs, celui des regles suit la pioche. Le titre de la page
+   le dit donc a chaque changement, au lieu d'un libelle fige. */
+/* Nom deliberement long : l'arbitre a lui aussi une table nommee TABLES, et
+   comme tout le jeu tient dans un seul fichier assemble, deux variables du
+   meme nom s'ecrasent en silence. C'est arrive : la table en ligne ne se
+   remplissait jamais parce qu'elle lisait le titre au lieu du nombre de
+   places. Voir le controle des noms en double dans audit.js. */
+/* Le sort des pieces restantes DEPEND DES REGLES : en chinois elles restent
+   de cote et personne n'y touche, en francais ce sont elles la pioche. Le
+   sous-titre disait « sept restent de cote » meme en domino francais, ou
+   c'est exactement le contraire. */
+var TITRES_DE_TABLE = {
+  2: { titre: "Domino européen",     reste: 14, sous: "À deux. Sept dominos chacun" },
+  3: { titre: "Domino martiniquais", reste: 7,  sous: "À trois. Sept dominos chacun" },
+  4: { titre: "Domino caraïbéen",    reste: 0,  sous: "À quatre, en équipes de deux, ton partenaire en face. Sept dominos chacun" }
+};
+
+/* Les deux arguments servent a la table EN LIGNE : c'est l'arbitre qui decide
+   du nombre de places et des regles, pas mes menus. Sans eux, on rejoignait
+   une table a quatre en gardant « Domino martiniquais » ecrit en titre. */
+function majTitre(joueurs, variante){
+  var n = joueurs || parseInt($("#joueurs").value, 10) || 3;
+  var t = TITRES_DE_TABLE[n] || TITRES_DE_TABLE[3];
+  var v = variante || $("#variante").value;
+  var regles = (v === "pioche") ? "français, avec pioche" : "chinois, sans pioche";
+  var reste;
+  if (!t.reste) reste = ", et les vingt-huit sont en main";
+  else if (v === "pioche") reste = ", les " + t.reste + " autres forment la pioche";
+  else reste = ", les " + t.reste + " autres restent de côté et ne se piochent jamais";
+  $("#titre").textContent = t.titre;
+  $("#sous").textContent = t.sous + reste + ". Règles du domino " + regles +
+    ". Trois parties gagnées d'affilée pour mettre cochon.";
+}
+
+/* LA PIOCHE, en domino francais. Le serveur envoie deja son compte dans
+   vue.talon et la partie locale le tient dans partie.talon : personne ne
+   l'affichait, et le joueur pouvait donc piocher sans jamais savoir combien
+   il restait. */
+function dessinerPioche(){
+  var e = $("#pioche");
+  if (!e) return;
+  var avecPioche = (partie.variante === "pioche");
+  e.hidden = !avecPioche;
+  if (!avecPioche) return;
+  var n = partie.talon ? partie.talon.length : 0;
+  $("#pioche-n").textContent = n;
+  e.classList.toggle("pioche--vide", n === 0);
+  e.setAttribute("title", n ? (n + " dominos à piocher") : "La pioche est vide");
+}
+
+function dessiner(){
+  dessinerChaine(); dessinerMain(); dessinerPlaces(); dessinerScore();
+  dessinerPioche(); majBoutons();
+}
+
+/* ───────────────────────────────────────────────────────── les boutons ── */
+function monSiege(){ return (ligne && ligne.monSiege >= 0) ? ligne.monSiege : 0; }
+
+function majBoutons(){
+  var moi = monSiege();
+  var monTour = partie.tour === moi && !partie.fini && !occupe;
+  var coups = monTour ? MOTEUR.coupsPossibles(partie.mains[moi], partie.plateau) : [];
+  $("#boude").disabled = !(monTour && coups.length === 0);
+
+  var g = false, dr = false;
+  if (monTour && choisi !== null){
+    for (var k = 0; k < coups.length; k++){
+      if (coups[k].i !== choisi) continue;
+      if (coups[k].cote === "gauche") g = true; else dr = true;
+    }
+  }
+  $("#poser-gauche").hidden = !(g && dr);
+  $("#poser-droite").hidden = !(g && dr);
+}
+
+function dire(texte, classe){
+  var e = $("#etat");
+  e.textContent = texte;
+  e.className = "etat" + (classe ? " " + classe : "");
+}
+
+function murmurer(joueur, mot){
+  var place = placeDe(joueur);
+  var e = place ? place.querySelector(".place__dit") : null;
+  if (!e) return;
+  e.textContent = mot;
+  setTimeout(function(){ if (e.textContent === mot) e.textContent = ""; }, 1800);
+}
+
+/* ─────────────────────────────────────────────────── le tour du joueur ── */
+function toucher(i){
+  if (partie.fini || partie.tour !== monSiege() || occupe) return;
+  var coups = MOTEUR.coupsPossibles(partie.mains[monSiege()], partie.plateau);
+  var mesCotes = [];
+  for (var k = 0; k < coups.length; k++) if (coups[k].i === i) mesCotes.push(coups[k].cote);
+  if (!mesCotes.length) return;
+
+  if (mesCotes.length === 1){ jouer(i, mesCotes[0]); return; }
+
+  /* Deux cotes possibles ne veut pas dire deux coups differents : quand les
+     deux bouts portent le MEME chiffre, poser a gauche ou a droite revient
+     exactement au meme. Demander alors au joueur de choisir, c'est lui faire
+     faire un geste pour rien. On pose, et on se tait. */
+  if (MOTEUR.boutGauche(partie.plateau) === MOTEUR.boutDroite(partie.plateau)){
+    jouer(i, "droite"); return;
+  }
+
+  choisi = (choisi === i) ? null : i;
+  dessiner();
+}
+
+function jouer(i, cote){
+  if (enLigne()){ choisi = null; arreterChrono(); envoyerEnLigne({ t: "jouer", i: i, cote: cote }); return; }
+  if (!MOTEUR.jouerCoup(partie, i, cote)) return;
+  choisi = null;
+  arreterChrono();
+  dessiner();
+  if (partie.fini){ finir(); return; }
+  suite();
+}
+
+function jouerBoude(){
+  if (enLigne()){ arreterChrono(); envoyerEnLigne({ t: "bouder" }); return; }
+  if (partie.tour !== 0 || partie.fini) return;
+  MOTEUR.bouder(partie);
+  murmurer(0, "Boudé !");
+  dire("Boudé. Tu tapes la table, le tour passe.");
+  arreterChrono();
+  dessiner();
+  if (partie.fini){ finir(); return; }
+  suite();
+}
+
+/* ────────────────────────────────────────────── le tour des ordinateurs ── */
+function suite(){
+  if (enLigne()) return;                 /* en ligne, c'est le serveur qui mene la danse */
+  if (partie.fini){ finir(); return; }
+  if (partie.tour === 0){
+    occupe = false;
+    var coups = MOTEUR.coupsPossibles(partie.mains[0], partie.plateau);
+    if (partie.variante === "pioche" && !coups.length && partie.talon.length){
+      MOTEUR.resoudreBlocage(partie);
+      dire("Tu as pioché jusqu'à pouvoir jouer.");
+      dessiner();
+      if (partie.fini){ finir(); return; }
+      if (partie.tour !== 0){ suite(); return; }
+      coups = MOTEUR.coupsPossibles(partie.mains[0], partie.plateau);
+    }
+    dire(coups.length ? "À toi de jouer." : "Tu ne peux pas jouer : dis boudé.");
+    dessiner();
+    lancerChrono();
+    return;
+  }
+
+  occupe = true;
+  majBoutons();
+  var qui = partie.tour;
+  dire(MOTEUR.NOMS[qui] + " réfléchit.");
+  setTimeout(function(){
+    /* Ce tour a ete planifie il y a une seconde : entre-temps le joueur a pu
+       rejoindre une table en ligne, ou relancer une donne. On verifie donc
+       que le monde n'a pas change avant de jouer a la place de quelqu'un. */
+    if (enLigne() || !partie || partie.fini || partie.tour !== qui){ occupe = false; return; }
+    var fait = MOTEUR.jouerOrdinateur(partie);
+    if (fait && fait.boude) murmurer(qui, "Boudé !");
+    dessiner();
+    if (partie.fini){ occupe = false; finir(); return; }
+    suite();
+  }, 850);
+}
+
+/* ───────────────────────────────────────────────────── la fin de donne ── */
+function finir(){
+  arreterChrono();
+  occupe = false;
+  var r = partie.resultat, texte, tienne;
+
+  /* Qui a gagne, de mon point de vue : moi, mon camp, ou personne. */
+  var camp = partie.equipes ? r.equipe : r.gagnant;
+  /* finir() ne tourne qu'a la table locale, ou je suis toujours le joueur 0 :
+     mon camp vaut donc 0 dans les deux cas. En ligne, c'est afficherVue() qui
+     rend le resultat, avec le siege que l'arbitre m'a donne. */
+  tienne = (camp === 0);
+
+  if (r.cause === "main-vide"){
+    if (r.gagnant === 0){
+      texte = partie.equipes
+        ? "Tu as posé ton dernier domino. Avec " + MOTEUR.NOMS[2] + ", vous les mettez cochon."
+        : "Tu as posé ton dernier domino. Tu mets les autres cochon.";
+    } else if (partie.equipes && r.equipe === 0){
+      texte = MOTEUR.NOMS[r.gagnant] + " a posé son dernier domino. Ton camp l'emporte.";
+    } else {
+      texte = MOTEUR.NOMS[r.gagnant] + " a posé son dernier domino. Tu es cochon.";
+    }
+  } else if (r.nul){
+    texte = "Le jeu est mort, et personne ne l'emporte : la partie est chirée. "
+          + "(" + r.points.join(" / ") + " points)";
+  } else if (partie.equipes){
+    texte = "Le jeu est mort. " + (r.equipe === 0 ? "Ton camp l'emporte" : "Ils l'emportent")
+          + " avec " + r.scores[r.equipe] + " points contre " + r.scores[1 - r.equipe] + ".";
+  } else {
+    texte = "Le jeu est mort. " + MOTEUR.NOMS[r.gagnant] + " l'emporte avec "
+          + r.points[r.gagnant] + " points. (" + r.points.join(" / ") + ")";
+  }
+  dire(texte, tienne ? "gagne" : (r.nul ? "" : "perdu"));
+
+  var t = tableCourante();
+  if (camp !== null){
+    t.score[camp] = (t.score[camp] || 0) + 1;
+    t.serie = (t.meneur === camp) ? t.serie + 1 : 1;
+    t.meneur = camp;
+  } else {
+    t.serie = 0; t.meneur = -1;
+  }
+  etat.dernier = r.cause + ":" + (camp === null ? "nul" : (partie.equipes ? "equipe" + camp : MOTEUR.NOMS[camp]));
+  sauver();
+  dessiner();
+}
+
+/* ─────────────────────────────────────────────────────────── le chrono ── */
+function lancerChrono(){
+  arreterChrono();
+  var d = parseInt($("#duree").value, 10);
+  /* MON SIEGE, PAS LE SIEGE ZERO. En ligne l'arbitre peut m'asseoir a la
+     place 1, 2 ou 3 : le chrono se taisait alors completement, et rien
+     n'empechait une table de rester bloquee sur un joueur parti. */
+  var moi = monSiege();
+  if (!d || !partie || partie.fini || partie.tour !== moi) return;
+  restant = d;
+  minuteur = setInterval(function(){
+    restant--;
+    $("#filigrane").classList.toggle("urgence", restant <= 5);
+    if (restant <= 0){
+      arreterChrono();
+      var coups = MOTEUR.coupsPossibles(partie.mains[moi], partie.plateau);
+      if (coups.length){
+        var c = coups[Math.floor(Math.random() * coups.length)];
+        dire("Le temps est tombé, un domino est parti tout seul.");
+        jouer(c.i, c.cote);
+      } else jouerBoude();
+    }
+  }, 1000);
+}
+function arreterChrono(){
+  clearInterval(minuteur); minuteur = null;
+  $("#filigrane").classList.remove("urgence");
+}
+
+/* ─────────────────────────────────────────── LE SABLIER DE LA TABLE ──
+   En ligne, l'arbitre joue a la place de qui n'a pas repondu au bout d'une
+   minute. Sans compteur visible, le joueur voyait un domino partir tout seul
+   sans comprendre pourquoi, et celui qui attendait ne savait pas combien de
+   temps il attendait encore. C'est le minuteur sous l'avatar de Ludicash. */
+var sablier = null;
+
+function arreterSablier(){
+  clearInterval(sablier); sablier = null;
+  var t = document.querySelectorAll(".place__temps");
+  for (var i = 0; i < t.length; i++){ t[i].textContent = ""; t[i].classList.remove("presse"); }
+}
+
+function lancerSablier(){
+  arreterSablier();
+  var vue = enLigne() ? LIGNE.vue() : null;
+  if (!vue || !vue.echeance || vue.fini || vue.enAttente) return;
+  var place = placeDe(vue.tour);
+  var e = place ? place.querySelector(".place__temps") : null;
+  if (!e) return;
+
+  function battre(){
+    var reste = Math.ceil((vue.echeance - Date.now()) / 1000);
+    if (reste < 0) reste = 0;
+    e.textContent = reste + " s";
+    e.classList.toggle("presse", reste <= 10);
+    if (reste <= 0) arreterSablier();
+  }
+  battre();
+  sablier = setInterval(battre, 1000);
+}
+
+/* ────────────────────────────────────── le formulaire L'SQz par-dessus ── */
+function ouvrirFormulaire(){
+  $("#cadre").src = "https://tally.so/embed/" + TALLY +
+    "?hideTitle=1&transparentBackground=1" +
+    "&jeu=domino" +
+    "&mode=" + encodeURIComponent($("#variante").value) +
+    "&niveau=" + encodeURIComponent((partie && partie.niveaux ? partie.niveaux.slice(1).join("-") : "melange")) +
+    "&parties=" + etat.parties +
+    "&resultat=" + encodeURIComponent(etat.dernier || "");
+  var v = $("#voile");
+  v.hidden = false;
+  document.body.classList.add("verrou");
+  requestAnimationFrame(function(){ v.classList.add("voile--ouvert"); });
+  $("#voile-fermer").focus();
+}
+function fermerFormulaire(){
+  var v = $("#voile");
+  v.classList.remove("voile--ouvert");
+  document.body.classList.remove("verrou");
+  setTimeout(function(){ v.hidden = true; $("#cadre").src = "about:blank"; }, 260);
+}
+
+/* ────────────────────────────────────────────────────── une donne neuve ── */
+/* PLUS DE MENU DE DIFFICULTE. Chaque adversaire tire sa force au debut de
+   chaque donne, comme autour d'une vraie table : l'un joue serre, l'autre
+   pose ce qui lui tombe sous la main, et l'on ne sait pas d'avance lequel.
+   Une table ou tout le monde joue pareil ne ressemble a aucune vraie table. */
+var FORCES = ["facile", "moyenne", "difficile"];
+
+function tirerLesForces(n){
+  var t = ["moyenne"];                       /* la place 0, c'est toi : sans objet */
+  for (var j = 1; j < n; j++) t.push(FORCES[Math.floor(Math.random() * FORCES.length)]);
+  return t;
+}
+
+function donneNeuve(){
+  if (enLigne()) return;                 /* la table en ligne mene sa propre donne */
+  choisi = null; occupe = false;
+
+  /* On efface ce que la donne d'avant a laisse sous les noms. Sans cela, les
+     totaux de points de la derniere donne restent affiches pendant la
+     suivante, et ils sont faux. */
+  var voix = document.querySelectorAll(".place__dit");
+  for (var v = 0; v < voix.length; v++) voix[v].textContent = "";
+  var n = parseInt($("#joueurs").value, 10) || 3;
+  partie = MOTEUR.nouvellePartie({
+    niveaux: tirerLesForces(n),
+    variante: $("#variante").value,
+    joueurs: n
+  });
+  tableCourante();
+  var e = partie.engage;
+  MOTEUR.jouerEngagement(partie);
+  dessiner();
+  dire(MOTEUR.NOMS[e.joueur] + " engage avec le " + e.piece[0] + "-" + e.piece[1] + ".");
+  setTimeout(suite, 900);
+}
+
+function rejouer(){
+  etat.parties++; sauver();
+
+  /* LE FORMULAIRE S'OUVRE A CHAQUE RETOUR AU JEU, EN LIGNE COMME HORS LIGNE.
+     Il ne s'ouvrait qu'a la table locale : la ligne « if (enLigne()) return »
+     passait AVANT, si bien qu'une partie en ligne ne posait jamais la
+     question. C'est pourtant la que le jeu sert a quelque chose : il se
+     diffuse par WhatsApp, et ce sont les coordonnees qu'il ramene qui
+     comptent. On ne redemande plus rien des que la personne a repondu. */
+  if (TALLY && !etat.forme) setTimeout(ouvrirFormulaire, 300);
+
+  if (enLigne()){ envoyerEnLigne({ t: "relancer" }); return; }
+  donneNeuve();
+}
+
+function demarrer(){
+  majTitre();
+  donneNeuve();
+
+  $("#main").addEventListener("click", function(e){
+    var hote = e.target.closest ? e.target.closest("[data-i]") : null;
+    if (!hote) return;
+    toucher(parseInt(hote.getAttribute("data-i"), 10));
+  });
+  $("#poser-gauche").addEventListener("click", function(){ if (choisi !== null) jouer(choisi, "gauche"); });
+  $("#poser-droite").addEventListener("click", function(){ if (choisi !== null) jouer(choisi, "droite"); });
+  $("#boude").addEventListener("click", jouerBoude);
+  $("#rejouer").addEventListener("click", rejouer);
+  $("#voile-fermer").addEventListener("click", fermerFormulaire);
+  $("#variante").addEventListener("change", function(){
+    if (enLigne()){ dire("Quitte la table pour changer les règles."); return; }
+    majTitre(); donneNeuve();
+  });
+  $("#joueurs").addEventListener("change", function(){
+    if (enLigne()){ dire("Quitte la table pour changer de format."); return; }
+    majTitre(); donneNeuve();
+  });
+
+  /* LA TABLE EN LIGNE. Meme jeu, meme arbitre, mais c'est lui qui distribue
+     et qui ne montre a chacun que sa main. */
+  $("#adversaire").addEventListener("change", function(){
+    if ($("#adversaire").value === "ligne"){ ouvrirSalon(); return; }
+    if (enLigne()) quitterLaTable();
+  });
+  $("#salon-fermer").addEventListener("click", function(){
+    fermerSalon();
+    if (!enLigne()) $("#adversaire").value = "ordinateur";
+  });
+  $("#salon-ouvrir").addEventListener("click", function(){
+    ouvrirTable(parseInt($("#salon-joueurs").value, 10) || 3, $("#salon-variante").value);
+  });
+  $("#salon-tables").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("[data-rejoindre]") : null;
+    if (b) rejoindreTable(b.getAttribute("data-rejoindre"));
+  });
+  $("#quitter").addEventListener("click", function(){
+    $("#adversaire").value = "ordinateur";
+    quitterLaTable();
+  });
+  try {
+    var nomGarde = localStorage.getItem("lsqz-domino-nom");
+    if (nomGarde) $("#salon-nom").value = nomGarde;
+  } catch (e) {}
+  $("#duree").addEventListener("change", function(){
+    if (partie && !partie.fini && partie.tour === monSiege()) lancerChrono();
+  });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") fermerFormulaire(); });
+
+  /* la table se redessine quand la fenetre change : l'echelle du serpentin
+     depend de la place disponible */
+  window.addEventListener("resize", function(){ if (partie) dessinerChaine(); });
+
+  window.addEventListener("message", function(e){
+    if (e.origin !== "https://tally.so") return;
+    if (typeof e.data !== "string" || e.data.indexOf("Tally.FormSubmitted") === -1) return;
+    etat.forme = true; sauver();
+    setTimeout(fermerFormulaire, 1600);
+  });
+}
+
+/* Le serpentin est du calcul pur : il ne touche pas au document, donc il se
+   verifie sans navigateur, exactement comme le moteur. C'est ce qui permet
+   au test de garantir qu'AUCUNE piece n'en chevauche une autre, sur des
+   centaines de parties, plutot que de s'en remettre a l'oeil. */
+if (typeof window !== "undefined"){
+  window.RENDU = {
+    disposerChaine: disposerChaine, mesurer: mesurer,
+    reglerLimite: reglerLimite,
+    limite: function(){ return LIM; }
+  };
+}
+
+if (typeof document !== "undefined"){
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", demarrer);
+  else demarrer();
+}
+})();
+</script>
+</body></html>
