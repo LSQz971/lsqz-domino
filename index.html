@@ -207,7 +207,12 @@ h1{
 .place--droite .place__bloc{align-items:flex-end}
 .place--gauche .place__nom,.place--droite .place__nom{margin-top:0}
 .place--gauche .place__bloc,.place--droite .place__bloc{
-  max-width:74px;
+  max-width:66px;
+}
+/* Un nom trop long se coupe au lieu d'elargir la place et de pousser la
+   chaine dessous : c'est le nom qui cede, jamais la table. */
+.place--haut .place__nom,.place--bas .place__nom{
+  max-width:150px;overflow:hidden;text-overflow:ellipsis;
 }
 .place--gauche .place__nom,.place--droite .place__nom{
   white-space:normal;line-height:1.15;word-break:break-word;
@@ -254,6 +259,13 @@ h1{
 /* LE SABLIER DE CELUI QUI EST AU TRAIT. Il ne sert qu'en ligne : l'arbitre
    joue a la place d'un joueur muet au bout d'une minute, et personne ne le
    savait. Ludicash met un minuteur sous chaque avatar, c'est la meme idee. */
+/* La place tenue par l'ordinateur : un mot sous le nom, pas un nom rallonge. */
+.place.robot .place__nom::after{
+  content:"ordi";display:block;font-size:8px;font-weight:800;letter-spacing:.06em;
+  color:var(--encre-2);opacity:.8;text-transform:uppercase;
+}
+.place.robot .jeton{opacity:.72}
+
 .place__temps{
   font-size:11px;font-weight:800;color:var(--encre-2);min-height:0;
   letter-spacing:.04em;font-variant-numeric:tabular-nums;
@@ -2174,7 +2186,10 @@ function envoyerEnLigne(message){
 function nomDeLaPlace(j){
   if (ligne && ligne.vue){
     var p = ligne.vue.places[j];
-    if (p && p.nom) return p.robot ? p.nom + " (ordinateur)" : p.nom;
+    /* On ne colle plus « (ordinateur) » au nom : il le doublait en largeur,
+       la place devenait plus large que la marge reservee, et la chaine
+       passait dessous. L'etat se dit par une pastille sous le nom. */
+    if (p && p.nom) return p.nom;
     return "Place libre";
   }
   return MOTEUR.NOMS[j];
@@ -2427,7 +2442,10 @@ function reglerLAire(){
     marge.bas = Math.max(marge.bas, boite.bottom - rm.top + 6);
   }
   /* on ne se laisse jamais etrangler : au pire la moitie du tapis reste au jeu */
-  var maxH = boite.width * 0.3, maxV = boite.height * 0.3;
+  /* Une place large ne doit JAMAIS se faire recouvrir : on lui laisse
+     jusqu'a 38 % du feutre. En dessous, la chaine lui passait dessus des
+     qu'un nom long ou une main ouverte l'elargissait. */
+  var maxH = boite.width * 0.38, maxV = boite.height * 0.38;
   aire.style.left   = Math.min(marge.gauche, maxH) + "px";
   aire.style.right  = Math.min(marge.droite, maxH) + "px";
   aire.style.top    = Math.min(marge.haut,   maxV) + "px";
@@ -2538,6 +2556,10 @@ function dessinerPlaces(){
     el.querySelector(".jeton").firstChild.nodeValue = initialeDeLaPlace(j);
     el.querySelector(".jeton__n").textContent = n;
     el.querySelector(".place__nom").textContent = nomDeLaPlace(j);
+    /* Tenue par l'ordinateur ? On le dit en un mot, sous le nom. */
+    var vue = enLigne() ? LIGNE.vue() : null;
+    var estRobot = !!(vue && vue.places[j] && vue.places[j].robot);
+    el.classList.toggle("robot", estRobot);
     el.classList.toggle("actif", partie.tour === j && !partie.fini);
     var tps = el.querySelector(".place__temps");
     if (tps && (partie.tour !== j || partie.fini)) { tps.textContent = ""; tps.classList.remove("presse"); }
