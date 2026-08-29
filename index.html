@@ -569,6 +569,32 @@ h1{
   background:transparent;color:var(--encre-2);border:1px solid rgba(255,255,255,.20);
 }
 
+/* ─────────────────────────────────── LE TELEPHONE COUCHE ──
+   En paysage il ne reste que 390 px de haut, et tout ce qui entoure la table
+   en mangeait 286 : la table tombait a 34 px et le jeu devenait injouable
+   (mesure du 29/08/2026, ecran 844 x 390). On donne donc tout a la table et
+   l'on efface ce qui peut attendre qu'on redresse le telephone. */
+@media (max-height:520px){
+  h1{display:none}
+  .jeu{padding:5px 8px 7px;gap:5px}
+  .barre button{padding:6px 11px;font-size:12px}
+  .invite{padding:6px 9px}
+  .invite__titre,.invite__note,.invite__lien{display:none}
+  .invite__wa{padding:8px 12px;font-size:13px}
+  .score{display:none}
+  .etat{font-size:12px;min-height:15px}
+  .actions button{padding:7px 13px;font-size:13px}
+  .meuble{min-height:190px;padding:6px;border-radius:16px}
+  .tapis{border-radius:10px}
+  .aire{left:52px;right:52px;top:34px;bottom:62px}
+  .d--main{width:26px;height:52px}
+  .main{min-height:54px;left:46px;bottom:6px}
+  .jeton{width:30px;height:30px;font-size:13px}
+  .place__nom{font-size:9px;margin-top:2px}
+  .place--bas{bottom:6px;left:8px}
+  .place--haut{top:4px}
+}
+
 @media (max-width:420px){
   .d--main{width:29px;height:58px}
   .jeton{width:34px;height:34px;font-size:14px}
