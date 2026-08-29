@@ -32,8 +32,13 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+/* LE JEU TIENT DANS L'ECRAN, comme chez Ludicash (leur table est en
+   « height: calc(100vh - 10em) »). Mesure du 29/08/2026 avant correction :
+   1409 px de page pour 778 px d'ecran, soit 631 px a faire defiler avant de
+   voir la table et le bouton d'invitation. On empile donc en colonne de
+   hauteur fixe, et c'est le tapis qui prend ce qui reste. */
 body{
-  margin:0;min-height:100vh;
+  margin:0;height:100vh;height:100dvh;overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
   color:var(--encre);
   background:radial-gradient(circle at 50% 22%, #2F8A55 0%, #1B6B3A 45%, #0C4522 100%);
@@ -42,22 +47,41 @@ body{
 }
 body.verrou{overflow:hidden}
 
-.jeu{width:min(97vw,1180px);padding:var(--pas) var(--pas) 34px;}
+.jeu{
+  width:min(97vw,1180px);padding:10px var(--pas) 12px;
+  height:100%;display:flex;flex-direction:column;gap:8px;min-height:0;
+}
 
 h1{
-  margin:.2em 0 .1em;font-size:clamp(20px,5.4vw,29px);letter-spacing:.02em;
-  text-align:center;text-transform:uppercase;
+  margin:0;font-size:clamp(15px,3.6vw,21px);letter-spacing:.02em;
+  text-align:center;text-transform:uppercase;flex:none;
 }
 .sous{margin:0 0 12px;text-align:center;color:var(--encre-2);font-size:clamp(11px,3vw,13px)}
 
 /* ───────────────────────────────────────────────── la barre de reglages ── */
+/* La barre de tete : ce qu'on touche en jouant, et rien de plus. */
+.barre{
+  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-items:center;flex:none;
+}
+.barre button{
+  font:inherit;font-size:13px;font-weight:800;padding:9px 15px;border-radius:10px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;
+}
+.barre button:active{transform:translateY(1px)}
+.barre__pale{
+  background:rgba(4,38,18,.52)!important;color:var(--encre-2)!important;
+  border:1px solid rgba(255,255,255,.20)!important;font-weight:600!important;
+}
+
 .reglages{
-  display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;justify-content:center;
-  padding:9px;border-radius:12px;margin-bottom:12px;
+  display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;justify-content:center;
+  padding:7px;border-radius:12px;margin:0;flex:none;
   background:linear-gradient(180deg,rgba(10,59,29,.55),rgba(10,59,29,.30));
   border:1px solid rgba(255,255,255,.08);
 }
-.reglages label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--encre-2)}
+.reglages label{display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--encre-2)}
+.reglages__aide{background:transparent!important;color:var(--encre-2)!important;
+  border:1px solid rgba(255,255,255,.20)!important;font-weight:600!important}
 .reglages select,.reglages button{
   font:inherit;font-size:13px;padding:7px 10px;border-radius:9px;
   border:1px solid rgba(255,255,255,.16);
@@ -77,7 +101,8 @@ h1{
    le jour. On empile donc trois choses : le bois et ses veines, la bande de
    reflet, et un lustre general qui creuse les bords. */
 .meuble{
-  position:relative;padding:clamp(11px,2.6vw,19px);border-radius:26px;
+  flex:1;min-height:0;
+  position:relative;padding:clamp(8px,2vw,16px);border-radius:26px;
   background:
     repeating-linear-gradient(93deg, rgba(30,12,2,.20) 0 1px, transparent 1px 6px),
     repeating-linear-gradient(87deg, rgba(255,222,175,.09) 0 1px, transparent 1px 12px),
@@ -131,7 +156,7 @@ h1{
      y a : PORTRAIT sur telephone, ou la chaine descend, PAYSAGE sur grand
      ecran, ou elle s'allonge. Mesure : 18 px avant, 33 px sur telephone et
      65 px sur bureau apres. */
-  height:min(64vh,540px);
+  height:100%;
   margin:0 auto;
   background:
     repeating-linear-gradient(48deg,rgba(255,255,255,.020) 0 2px,transparent 2px 5px),
@@ -142,7 +167,7 @@ h1{
     inset 0 0 70px rgba(0,0,0,.42);
   overflow:hidden;
 }
-@media (min-width:760px){ .tapis{height:min(72vh,660px)} }
+
 
 .filigrane{
   position:absolute;inset:26% 30%;pointer-events:none;opacity:.12;
@@ -394,8 +419,8 @@ h1{
 
 /* ──────────────────────────────────────────────────── l'etat et la main ── */
 .etat{
-  text-align:center;font-weight:700;margin:10px 0 6px;min-height:22px;
-  font-size:clamp(14px,3.8vw,17px);
+  text-align:center;font-weight:700;margin:0;min-height:20px;flex:none;
+  font-size:clamp(13px,3.4vw,16px);
 }
 .etat.gagne{color:var(--or)}
 .etat.perdu{color:var(--alerte)}
@@ -407,7 +432,7 @@ h1{
 }
 .main .chaine__vide{align-self:center}
 
-.actions{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;justify-content:center;margin:0;flex-wrap:wrap;flex:none}
 .actions button{
   font:inherit;font-size:14px;font-weight:800;padding:11px 18px;border-radius:11px;
   border:1px solid rgba(255,255,255,.16);background:rgba(4,38,18,.42);
@@ -418,7 +443,7 @@ h1{
 .actions .boude:disabled{background:rgba(4,38,18,.42);color:var(--encre)}
 
 .score{
-  display:flex;justify-content:center;gap:14px;margin-top:14px;flex-wrap:wrap;
+  display:flex;justify-content:center;gap:14px;margin:0;flex-wrap:wrap;flex:none;
   font-size:12px;color:var(--encre-2);
 }
 .score b{color:var(--encre);font-size:15px}
@@ -428,11 +453,12 @@ h1{
    Le lien de sa table, pret a coller dans WhatsApp. C'est par la que le jeu
    voyage : personne n'a de compte, tout se passe par un lien. */
 .invite{
-  margin-top:14px;padding:12px 14px;border-radius:12px;
-  background:rgba(4,38,18,.42);border:1px solid rgba(240,198,75,.30);
+  margin:0;padding:9px 11px;border-radius:12px;flex:none;
+  background:rgba(4,38,18,.52);border:1px solid rgba(240,198,75,.42);
+  box-shadow:0 0 0 3px rgba(240,198,75,.10);
 }
-.invite__titre{margin:0 0 9px;font-size:13px;font-weight:800;color:var(--or)}
-.invite__lien{display:flex;gap:7px;flex-wrap:wrap}
+.invite__titre{margin:0 0 7px;font-size:13px;font-weight:800;color:var(--or)}
+.invite__lien{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .invite__lien input{
   flex:1;min-width:180px;font:inherit;font-size:12.5px;padding:9px 11px;border-radius:9px;
   border:1px solid rgba(255,255,255,.18);background:rgba(4,38,18,.55);color:var(--encre);
@@ -441,12 +467,15 @@ h1{
   font:inherit;font-size:13px;font-weight:800;padding:9px 16px;border-radius:9px;
   border:0;background:var(--or);color:#2A1D00;cursor:pointer;flex:none;
 }
+/* Le geste principal : c'est par WhatsApp que le jeu voyage. */
 .invite__wa{
-  display:inline-block;margin-top:9px;font-size:13px;font-weight:700;
-  padding:9px 15px;border-radius:9px;text-decoration:none;
-  background:#1E7040;color:var(--encre);border:1px solid rgba(255,255,255,.16);
+  display:block;text-align:center;font-size:15px;font-weight:800;
+  padding:11px 16px;border-radius:11px;text-decoration:none;
+  background:#25D366;color:#06331A;border:0;
+  box-shadow:0 3px 10px rgba(0,0,0,.34);
 }
-.invite__note{margin:9px 0 0;font-size:11.5px;color:var(--encre-2)}
+.invite__wa:active{transform:translateY(1px)}
+.invite__note{margin:6px 0 0;font-size:11px;color:var(--encre-2)}
 
 .salon__convie{
   display:flex;flex-direction:column;gap:6px;align-items:flex-start;
@@ -461,7 +490,8 @@ h1{
 }
 
 .regle{
-  margin-top:20px;font-size:12.5px;line-height:1.62;color:var(--encre-2);
+  margin:0;max-height:34vh;overflow:auto;flex:none;
+  font-size:12.5px;line-height:1.6;color:var(--encre-2);
   background:rgba(4,38,18,.30);border:1px solid rgba(255,255,255,.07);
   border-radius:12px;padding:12px 14px;
 }
@@ -559,9 +589,37 @@ h1{
 <div class="jeu">
 
   <h1 id="titre">Domino martiniquais</h1>
-  <p class="sous" id="sous">Sept dominos chacun. Trois parties pour mettre cochon.</p>
 
-  <div class="reglages">
+
+  <!-- UNE BARRE DE TROIS BOUTONS, ET RIEN D'AUTRE. Les quatre menus se
+       repliaient sur SIX lignes sur un telephone, soit 264 px des 844 de
+       l'ecran : il ne restait plus que 253 px pour la table. Ludicash
+       n'affiche aucun reglage sur l'ecran de jeu, on fait pareil. -->
+  <div class="barre">
+    <button id="rejouer" type="button">Nouvelle partie</button>
+    <button id="quitter" type="button" hidden>Quitter la table</button>
+    <!-- JOUER EN LIGNE EST L'ACTION PRINCIPALE, pas un reglage : le jeu se
+         diffuse par WhatsApp pour jouer AVEC des gens. La cacher derriere un
+         menu, c'est cacher ce pour quoi le jeu existe. -->
+    <button id="jouer-en-ligne" type="button">Jouer en ligne</button>
+    <button class="barre__pale" id="voir-reglages" type="button" aria-expanded="false">Réglages</button>
+    <button class="barre__pale" id="voir-regle" type="button" aria-expanded="false">La règle</button>
+  </div>
+
+  <div class="reglages" id="reglages" hidden>
+    <label>Adversaires
+      <select id="adversaire">
+        <option value="ordinateur" selected>Contre l'ordinateur</option>
+        <option value="ligne">Contre des joueurs en ligne</option>
+      </select>
+    </label>
+    <label>Table
+      <select id="joueurs">
+        <option value="2">Domino européen</option>
+        <option value="3" selected>Domino martiniquais</option>
+        <option value="4">Domino caraïbéen</option>
+      </select>
+    </label>
     <label>Règles
       <select id="variante">
         <option value="chinois" selected>Domino chinois (sans la pioche)</option>
@@ -576,24 +634,19 @@ h1{
         <option value="30">30 secondes</option>
       </select>
     </label>
-    <button id="rejouer" type="button">Nouvelle partie</button>
-    <button id="quitter" type="button" hidden>Quitter la table</button>
   </div>
 
-  <div class="reglages">
-    <label>Adversaires
-      <select id="adversaire">
-        <option value="ordinateur" selected>Contre l'ordinateur</option>
-        <option value="ligne">Contre des joueurs en ligne</option>
-      </select>
-    </label>
-    <label>Table
-      <select id="joueurs">
-        <option value="2">Domino européen</option>
-        <option value="3" selected>Domino martiniquais</option>
-        <option value="4">Domino caraïbéen</option>
-      </select>
-    </label>
+  <!-- INVITER, AU-DESSUS DE LA TABLE. Il etait sous le tapis, et il fallait
+       faire defiler pour le trouver : au moment ou l'on ouvre une table, on
+       cherche d'abord comment convier ses amis, pas les dominos. -->
+  <div class="invite" id="invite" hidden>
+    <p class="invite__titre">Ta table est ouverte. Invite qui tu veux.</p>
+    <a class="invite__wa" id="invite-wa" target="_blank" rel="noopener">Envoyer l'invitation sur WhatsApp</a>
+    <div class="invite__lien">
+      <input id="invite-url" type="text" readonly aria-label="Le lien de ta table">
+      <button id="invite-copier" type="button">Copier</button>
+    </div>
+    <p class="invite__note">Qui ouvre ce lien tombe directement à ta table. Le même lien sert pour plusieurs joueurs.</p>
   </div>
 
   <!-- LA TABLE. Le meuble en bois verni, le feutre dedans, les places autour. -->
@@ -658,18 +711,6 @@ h1{
 
   <div class="etat" id="etat">Distribution</div>
 
-  <!-- INVITER. Sans ce bloc, on ne pouvait pas convier quelqu'un : il fallait
-       lui dire d'aller sur le jeu, de choisir « en ligne », et de deviner
-       laquelle des tables ouvertes etait la notre. -->
-  <div class="invite" id="invite" hidden>
-    <p class="invite__titre">Ta table est ouverte. Invite qui tu veux.</p>
-    <div class="invite__lien">
-      <input id="invite-url" type="text" readonly aria-label="Le lien de ta table">
-      <button id="invite-copier" type="button">Copier</button>
-    </div>
-    <a class="invite__wa" id="invite-wa" target="_blank" rel="noopener">Envoyer sur WhatsApp</a>
-    <p class="invite__note">Qui ouvre ce lien tombe directement à ta table.</p>
-  </div>
 
   <div class="actions">
     <button class="boude" id="boude" type="button" disabled>Boudé</button>
@@ -679,7 +720,7 @@ h1{
 
   <div class="score" id="score"></div>
 
-  <p class="regle"><b>La règle.</b> Vingt-huit dominos, sept pour chacun. Le plus fort
+  <p class="regle" id="regle" hidden><b id="sous">La règle.</b> Vingt-huit dominos, sept pour chacun. Le plus fort
   double engage, à défaut le plus gros domino. On joue dans le sens des aiguilles
   d'une montre, en faisant correspondre les chiffres aux deux bouts de la chaîne.
   Qui ne peut pas jouer tape la table et dit <b>boudé</b> : son tour passe.
@@ -1959,15 +2000,23 @@ function envoyerEnLigne(message){
 }
 
 /* Le nom d'une place : celui du serveur en ligne, celui du pays hors ligne. */
+/* UNE PLACE VIDE EN LIGNE N'EST PAS UN ORDINATEUR. On y ecrivait « Zandoli »
+   et « Ti Kabwit », les noms des adversaires de la table locale : on croyait
+   que quelqu'un etait deja assis, et l'on n'invitait personne. */
 function nomDeLaPlace(j){
-  if (ligne && ligne.vue && ligne.vue.places[j] && ligne.vue.places[j].nom){
-    return ligne.vue.places[j].nom;
+  if (ligne && ligne.vue){
+    var p = ligne.vue.places[j];
+    if (p && p.nom) return p.robot ? p.nom + " (ordinateur)" : p.nom;
+    return "Place libre";
   }
   return MOTEUR.NOMS[j];
 }
 function initialeDeLaPlace(j){
-  var n = nomDeLaPlace(j);
-  return (ligne && ligne.vue) ? n.charAt(0).toUpperCase() : MOTEUR.INITIALES[j];
+  if (ligne && ligne.vue){
+    var p = ligne.vue.places[j];
+    return (p && p.nom) ? p.nom.charAt(0).toUpperCase() : "·";
+  }
+  return MOTEUR.INITIALES[j];
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -2386,8 +2435,9 @@ function majTitre(joueurs, variante){
   else if (v === "pioche") reste = ", les " + t.reste + " autres forment la pioche";
   else reste = ", les " + t.reste + " autres restent de côté et ne se piochent jamais";
   $("#titre").textContent = t.titre;
-  $("#sous").textContent = t.sous + reste + ". Règles du domino " + regles +
-    ". Trois parties gagnées d'affilée pour mettre cochon.";
+  var sous = $("#sous");
+  if (sous) sous.textContent = t.sous + reste + ". Règles du domino " + regles +
+    ". Trois parties gagnées d'affilée pour mettre cochon. ";
 }
 
 /* LA PIOCHE, en domino francais. Le serveur envoie deja son compte dans
@@ -2720,6 +2770,29 @@ function demarrer(){
   });
   $("#poser-gauche").addEventListener("click", function(){ if (choisi !== null) jouer(choisi, "gauche"); });
   $("#poser-droite").addEventListener("click", function(){ if (choisi !== null) jouer(choisi, "droite"); });
+  /* LA REGLE SE REPLIE. Elle coutait 208 px en permanence, pour un texte
+     qu'on lit une fois : le jeu ne tenait plus dans l'ecran. */
+  $("#jouer-en-ligne").addEventListener("click", function(){
+    if (enLigne()){ dire("Tu es déjà à une table en ligne."); return; }
+    $("#adversaire").value = "ligne";
+    ouvrirSalon();
+  });
+
+  $("#voir-reglages").addEventListener("click", function(){
+    var r = $("#reglages"), ouvert = r.hidden;
+    r.hidden = !ouvert;
+    this.setAttribute("aria-expanded", ouvert ? "true" : "false");
+    if (partie) dessinerChaine();
+  });
+
+  $("#voir-regle").addEventListener("click", function(){
+    var r = $("#regle"), ouvert = r.hidden;
+    r.hidden = !ouvert;
+    this.setAttribute("aria-expanded", ouvert ? "true" : "false");
+    this.textContent = ouvert ? "Fermer la règle" : "La règle";
+    if (partie) dessinerChaine();
+  });
+
   $("#boude").addEventListener("click", jouerBoude);
   $("#rejouer").addEventListener("click", rejouer);
   $("#voile-fermer").addEventListener("click", fermerFormulaire);
