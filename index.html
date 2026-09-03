@@ -79,7 +79,7 @@ h1{
    chevauchaient tous (capture d'un utilisateur, 29/08/2026). */
 .reglages{
   position:fixed;z-index:65;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:min(94vw,420px);max-height:86vh;overflow:auto;
+  width:min(94vw,420px);max-height:86vh;max-height:86dvh;overflow:auto;
   display:flex;flex-direction:column;gap:10px;
   padding:16px;border-radius:16px;
   background:linear-gradient(180deg,#12572A,#0A3B1D);
@@ -91,6 +91,10 @@ h1{
 .reglages__fermer{
   font:inherit;font-size:14px;font-weight:800;padding:11px;border-radius:11px;
   border:0;background:var(--or);color:#2A1D00;cursor:pointer;margin-top:4px;
+  /* Collé en bas du panneau : les réglages défilent derrière lui, la sortie
+     reste sous le pouce. */
+  position:sticky;bottom:0;flex:none;
+  box-shadow:0 -8px 14px rgba(10,59,29,.85);
 }
 .reglages label{display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--encre-2)}
 .reglages__aide{background:transparent!important;color:var(--encre-2)!important;
@@ -728,7 +732,19 @@ h1{
   padding:var(--pas);background:#093118;opacity:0;transition:opacity .26s;
 }
 .voile--ouvert{opacity:1}
+/* LE BOUTON DE SORTIE DOIT SE VOIR, TOUJOURS (Pierre, 03/09/2026 : « le
+   bouton revenir au jeu est trop bas, il ne se voit pas »).
+   La cause : `vh` sur téléphone compte la hauteur de l'écran COMME SI la
+   barre d'adresse n'existait pas. 90vh dépassait donc la zone réellement
+   visible, et le bouton, qui est sous le formulaire, passait dessous. On
+   mesure en `dvh`, la hauteur vraiment disponible, qui suit la barre quand
+   elle se replie. La ligne en `vh` reste juste au-dessus pour les vieux
+   navigateurs qui ignorent `dvh`.
+   Et le bouton devient COLLANT : même si le contenu déborde, il reste posé
+   en bas de la boîte, jamais au bout d'un défilement que personne ne fait. */
 .voile__boite{width:min(96vw,560px);height:min(90vh,760px);display:flex;flex-direction:column;gap:10px}
+.voile__boite{height:min(90dvh,760px)}
+.voile__boite .bouton--pale{position:sticky;bottom:0;flex:none}
 .cadre{flex:1;width:100%;min-height:340px;border:0;border-radius:12px;background:#EDE8DC}
 .bouton--pale{
   font:inherit;font-size:14px;padding:11px;border-radius:11px;cursor:pointer;
