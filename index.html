@@ -259,11 +259,10 @@ h1{
 /* LE SABLIER DE CELUI QUI EST AU TRAIT. Il ne sert qu'en ligne : l'arbitre
    joue a la place d'un joueur muet au bout d'une minute, et personne ne le
    savait. Ludicash met un minuteur sous chaque avatar, c'est la meme idee. */
-/* La place tenue par l'ordinateur : un mot sous le nom, pas un nom rallonge. */
-.place.robot .place__nom::after{
-  content:"ordi";display:block;font-size:8px;font-weight:800;letter-spacing:.06em;
-  color:var(--encre-2);opacity:.8;text-transform:uppercase;
-}
+/* AUCUN MOT SOUS LE NOM (Pierre, 03/09/2026). On y ecrivait « ORDI » quand
+   une place etait tenue : personne ne l'a demande, et un joueur absent n'a
+   pas a porter une etiquette a sa place. Le jeton un peu plus pale suffit a
+   dire que la place n'est pas tenue par son occupant. */
 .place.robot .jeton{opacity:.72}
 
 .place__temps{
@@ -610,7 +609,8 @@ h1{
 }
 .score b{color:var(--encre);font-size:15px}
 .score .cochon{color:var(--alerte);font-weight:800}
-/* Ou en est le match en ligne : cinq donnes, et le dernier est super cochon. */
+/* Ou en est le match en ligne : trois ou cinq donnes selon la table, et le
+   dernier est super cochon. */
 .score__match{color:var(--or);font-weight:700}
 /* SUPER COCHON : le mot est plus long, il lui faut de la place. */
 .verdict--honte .verdict__mot{word-break:break-word}
@@ -733,6 +733,119 @@ h1{
 .bouton--pale{
   font:inherit;font-size:14px;padding:11px;border-radius:11px;cursor:pointer;
   background:transparent;color:var(--encre-2);border:1px solid rgba(255,255,255,.20);
+}
+
+/* ══════════════════════════════════════════ LE TCHAT DE TABLE ══════════
+   Relevé chez Ludicash le 03/09/2026, dans une partie réelle : leur tchat
+   de partie fait 154 x 182 px sur un écran de 697, il est POSÉ sur le tapis
+   en bas à droite, son fond est translucide (on voit le feutre au travers),
+   et sa barre de saisie ne fait qu'UNE LIGNE de 26 px. C'est ce dernier
+   point qui règle le problème de l'écran serré : le tchat ne pousse jamais
+   le jeu, il passe dessus, et il se replie d'un doigt.
+
+   Deux choses en plus de chez eux, parce qu'un tchat fermé est un tchat
+   mort : une bulle qui compte ce qu'on n'a pas lu, et un bloc qui remonte
+   au-dessus du clavier au lieu de se laisser recouvrir. */
+.tchat{
+  position:absolute;right:14px;bottom:14px;z-index:8;
+  width:min(60vw,190px);
+  display:flex;flex-direction:column;
+  border-radius:10px;overflow:hidden;
+  box-shadow:0 6px 18px rgba(0,0,0,.45);
+}
+.tchat__titre{
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:4px 8px;border:0;cursor:pointer;
+  background:#0B4A63;color:#fff;
+}
+.tchat__chevron{
+  width:0;height:0;
+  border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:5px solid rgba(255,255,255,.85);
+}
+.tchat__fil{
+  height:132px;overflow-y:auto;padding:4px 5px;
+  background:rgba(24,32,26,.66);
+  box-shadow:inset 0 0 2px rgba(0,0,0,.9);
+  font-size:11px;line-height:1.35;color:#E8EDE6;
+}
+.tchat__nom{font-size:9px;color:#9FB8A4;margin:3px 4px 1px}
+.tchat__bloc{display:flex;margin:1px 0}
+.tchat__bloc--moi{justify-content:flex-end}
+.tchat__mot{
+  display:inline-block;max-width:82%;min-width:22%;
+  padding:3px 6px;border-radius:7px;
+  background:rgba(0,0,0,.34);
+  overflow-wrap:break-word;
+}
+/* Les miens à droite, en vert : c'est la seule couleur qui dise « moi »
+   sans qu'on ait à lire le nom. */
+.tchat__mot--moi{background:#166B10;color:#fff}
+.tchat__vide{color:#9FB8A4;font-size:10px;text-align:center;padding:8px 4px}
+.tchat__barre{
+  display:flex;align-items:center;position:relative;
+  background:rgba(24,32,26,.80);
+}
+.tchat__champ{
+  flex:1;min-width:0;height:26px;
+  font:inherit;font-size:12px;
+  padding:0 4px 0 26px;
+  border:0;background:transparent;color:#E8EDE6;outline:none;
+}
+.tchat__emoji{
+  position:absolute;left:2px;top:0;bottom:0;width:24px;
+  font-size:15px;line-height:1;border:0;background:transparent;
+  color:#FFD86B;cursor:pointer;padding:0;
+}
+.tchat__envoi{
+  width:26px;height:26px;flex:none;
+  font-size:19px;line-height:1;border:0;background:transparent;
+  color:#7FD08A;cursor:pointer;padding:0 0 2px;
+}
+/* La palette s'ouvre PAR-DESSUS le fil, jamais en poussant la barre : la
+   saisie ne bouge pas d'un pixel pendant qu'on choisit. */
+.tchat__palette{
+  position:absolute;left:0;right:0;bottom:26px;
+  display:flex;flex-wrap:wrap;gap:2px;padding:5px;
+  background:rgba(14,20,15,.96);
+  box-shadow:0 -2px 8px rgba(0,0,0,.5);
+}
+.tchat__palette button{
+  font-size:17px;line-height:1;width:28px;height:28px;
+  border:0;background:transparent;cursor:pointer;padding:0;
+}
+.tchat__bulle{
+  position:absolute;right:14px;bottom:14px;z-index:8;
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(11,74,99,.92);
+  cursor:pointer;padding:0;
+}
+/* La bulle de bande dessinée, dessinée en CSS : aucun fichier à charger. */
+.tchat__bulle::before{
+  content:"";position:absolute;left:9px;top:11px;width:20px;height:13px;
+  border-radius:6px;background:#fff;
+}
+.tchat__bulle::after{
+  content:"";position:absolute;left:13px;top:22px;
+  border-left:5px solid #fff;border-bottom:6px solid transparent;
+}
+.tchat__pastille{
+  position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;
+  border-radius:9px;background:#D8362A;color:#fff;
+  font-size:10px;font-weight:700;line-height:17px;text-align:center;
+  padding:0 3px;
+}
+
+/* Le telephone couche n'a que 390 px de haut : le fil se raccourcit plutot
+   que de couvrir la table, et la palette se resserre. */
+@media (max-height:520px){
+  .tchat{right:8px;bottom:8px;width:min(52vw,168px)}
+  .tchat__fil{height:74px}
+  .tchat__bulle{right:8px;bottom:8px;width:32px;height:32px}
+  .tchat__bulle::before{left:7px;top:9px;width:18px;height:11px}
+  .tchat__bulle::after{left:11px;top:18px}
 }
 
 /* ─────────────────────────────────── LE TELEPHONE COUCHE ──
@@ -918,6 +1031,26 @@ h1{
       </div>
     </div>
   </div>
+
+  <!-- LE TCHAT DE TABLE. Il se pose PAR-DESSUS le feutre, en bas à droite, et
+       ne pousse rien : la table garde toute sa place. Fermé, il n'est qu'une
+       bulle, avec le compte de ce qui n'a pas été lu. -->
+  <div class="tchat" id="tchat" hidden>
+    <button class="tchat__titre" id="tchat-replier" type="button" aria-label="Replier le tchat">
+      Tchat de table<span class="tchat__chevron" aria-hidden="true"></span>
+    </button>
+    <div class="tchat__fil" id="tchat-fil" role="log" aria-live="polite"></div>
+    <form class="tchat__barre" id="tchat-barre" autocomplete="off">
+      <button class="tchat__emoji" id="tchat-emoji" type="button" aria-label="Ajouter une frimousse">☺</button>
+      <input class="tchat__champ" id="tchat-champ" type="text" maxlength="100"
+             enterkeyhint="send" aria-label="Ce que tu dis à la table">
+      <button class="tchat__envoi" id="tchat-envoi" type="submit" aria-label="Envoyer">›</button>
+    </form>
+    <div class="tchat__palette" id="tchat-palette" hidden></div>
+  </div>
+  <button class="tchat__bulle" id="tchat-bulle" type="button" hidden aria-label="Ouvrir le tchat de table">
+    <span class="tchat__pastille" id="tchat-pastille" hidden>0</span>
+  </button>
   </div>
 
   <div class="etat" id="etat">Distribution</div>
@@ -971,6 +1104,16 @@ h1{
         <select id="salon-variante">
           <option value="chinois" selected>Domino chinois (sans la pioche)</option>
           <option value="pioche">Domino français (avec la pioche)</option>
+        </select>
+      </label>
+      <!-- LA LONGUEUR DU MATCH. Trois donnes pour une partie qui se joue entre
+           deux bus, cinq pour une vraie soirée. Le dernier est super cochon
+           dans les deux cas, et trois donnes gagnées d'affilée prennent la
+           table avant la fin. -->
+      <label>Match
+        <select id="salon-donnes">
+          <option value="3" selected>En 3 donnes</option>
+          <option value="5">En 5 donnes</option>
         </select>
       </label>
       <button id="salon-ouvrir" type="button">Ouvrir une table</button>
@@ -1109,6 +1252,23 @@ function coupsPossibles(main, plateau){
     var p = main[i];
     if (p[0] === g || p[1] === g) out.push({ i: i, cote: "gauche" });
     if (p[0] === d || p[1] === d) out.push({ i: i, cote: "droite" });
+  }
+  return out;
+}
+
+/* LES COUPS AUTORISES A CET INSTANT, et c'est ce qui change tout en ligne.
+   Sur une table vide, coupsPossibles rend TOUTE la main jouable : c'est vrai
+   d'un plateau vide, mais faux d'une donne qui commence, ou un seul domino
+   engage, celui que la regle designe. Tant que l'arbitre posait lui-meme
+   l'engagement, la difference ne se voyait pas. Des lors que c'est le joueur
+   qui le pose, il faut lui interdire d'ouvrir avec n'importe quoi.
+   Sans piece d'engagement passee, on retombe exactement sur l'ancien
+   comportement : rien ne change pour la table hors ligne. */
+function coupsAutorises(main, plateau, aEngager){
+  if (plateau.pieces.length || !aEngager) return coupsPossibles(main, plateau);
+  var out = [];
+  for (var i = 0; i < main.length; i++){
+    if (memePiece(main[i], aEngager)) out.push({ i: i, cote: "droite" });
   }
   return out;
 }
@@ -1539,7 +1699,8 @@ var MOTEUR = {
   jeuComplet: jeuComplet, points: points, estDouble: estDouble, pointsMain: pointsMain,
   memePiece: memePiece, melanger: melanger, distribuer: distribuer, quiEngage: quiEngage,
   plateauVide: plateauVide, boutGauche: boutGauche, boutDroite: boutDroite,
-  coupsPossibles: coupsPossibles, orienter: orienter, poser: poser, boutsApres: boutsApres,
+  coupsPossibles: coupsPossibles, coupsAutorises: coupsAutorises,
+  orienter: orienter, poser: poser, boutsApres: boutsApres,
   memoireNeuve: memoireNeuve, noterBoude: noterBoude, saitQueSansValeur: saitQueSansValeur,
   equipeDe: equipeDe,
   choisirCoup: choisirCoup,
@@ -1591,11 +1752,24 @@ function Table(options){
   this.journal = [];                /* ce que la table a dit, pour le chat de partie */
   this.finie = false;
 
-  /* LE MATCH EN LIGNE SE JOUE EN CINQ DONNES, et le dernier est SUPER COCHON
+  /* LE TCHAT DE TABLE (Pierre, 03/09/2026). Ce que les joueurs se DISENT,
+     a distinguer du journal, qui est ce que la table RACONTE. L'arbitre le
+     tient comme il tient le reste : il part donc dans l'etat de chacun, si
+     bien qu'un joueur qui arrive, ou qui revient apres une coupure, recoit
+     la conversation avec sa main, sans un appel de plus. Le numero sert a
+     l'ecran pour savoir ce qui est neuf sans comparer des textes. */
+  this.tchat = [];
+  this.tchatN = 0;
+
+  /* LE MATCH EN LIGNE SE JOUE EN TROIS OU EN CINQ DONNES, au choix de qui
+     ouvre la table (Pierre, 03/09/2026), et le dernier est SUPER COCHON
      (regle posee par Pierre le 29/08/2026). Sans but, une table en ligne
      n'avait aucune raison de s'arreter : on jouait jusqu'a ce que quelqu'un
-     s'en aille. Le cochon, trois donnes d'affilee, reste et coupe court. */
-  this.donnesMax = o.donnesMax || 5;
+     s'en aille. Le cochon, trois donnes d'affilee, reste et coupe court.
+     TROIS EST LA VALEUR PAR DEFAUT (Pierre, 03/09/2026) : le jeu se joue au
+     telephone, entre deux choses, et un match qui se termine est un match
+     qu'on rejoue. Cinq se demande, trois se donne. */
+  this.donnesMax = (o.donnesMax === 5) ? 5 : 3;
   this.donnes = 0;
   this.superCochon = null;          /* les camps derniers a la fin du match */
 
@@ -1628,7 +1802,8 @@ Table.prototype.expirer = function(maintenant){
   var s = this.sieges[siege];
   if (!s) return { rien: true };
 
-  var coups = MOTEUR.coupsPossibles(this.partie.mains[siege], this.partie.plateau);
+  var coups = MOTEUR.coupsAutorises(this.partie.mains[siege], this.partie.plateau,
+                                    this.aEngager());
   if (coups.length){
     var c = coups[Math.floor(this.hasard() * coups.length)];
     var piece = this.partie.mains[siege][c.i];
@@ -1704,6 +1879,24 @@ Table.prototype.dire = function(texte){
   if (this.journal.length > 40) this.journal.shift();
 };
 
+/* ═══════════════════════════════════════════════════════ LE TCHAT ═══════
+   Un joueur parle. Aucune piece ne passe par ici, et rien de ce qui s'y dit
+   ne touche a la partie : c'est la seule chose de cette table qui ne soit
+   pas une regle du jeu. On garde les trente derniers mots, comme le journal
+   garde les quarante dernieres lignes. */
+Table.prototype.parler = function(siege, texte){
+  var s = this.sieges[siege];
+  if (!s) return { erreur: "tu n'es pas à cette table" };
+  var t = (texte || "").replace(/\s+/g, " ").trim();
+  if (!t) return { erreur: "il n'y a rien à dire" };
+  /* CENT CARACTERES AU MAXIMUM. Au-dela ce n'est plus une parole de table,
+     c'est un discours, et sur un telephone il chasse le jeu de l'ecran. */
+  if (t.length > 100) return { erreur: "cent caractères au maximum" };
+  this.tchat.push({ siege: siege, nom: s.nom, texte: t, n: ++this.tchatN });
+  if (this.tchat.length > 30) this.tchat.shift();
+  return { ok: true };
+};
+
 /* ──────────────────────────────────────────────────── la donne ── */
 
 Table.prototype.donneNeuve = function(){
@@ -1715,15 +1908,35 @@ Table.prototype.donneNeuve = function(){
     niveaux: niveaux,
     hasard: this.hasard
   });
-  var e = this.partie.engage;
-  MOTEUR.jouerEngagement(this.partie);
-  this.dire(this.nomDe(e.joueur) + " engage avec le " + e.piece[0] + "-" + e.piece[1] + ".");
+  /* LE PREMIER DOMINO SE POSE A LA MAIN (Pierre, 03/09/2026). L'arbitre le
+     posait lui-meme : le joueur gagnait une donne, et la suivante s'ouvrait
+     toute seule sans qu'il ait rien fait. Autour d'une vraie table, celui qui
+     a le plus fort double l'abat lui-meme, et c'est un geste. La regle ne
+     change pas d'un mot : c'est toujours le plus fort double qui engage, et
+     lui seul est jouable tant que la table est vide. Seule la main qui le
+     pose change.
+     On ne dit PAS quelle piece c'est : elle n'est encore dans aucune chaine,
+     l'annoncer a toute la table revelerait un domino d'une main cachee. */
+  this.dire("Nouvelle donne. C'est à " + this.nomDe(this.partie.engage.joueur) + " d'engager.");
   this.faireJouerLesRobots();
 };
 
+/* LA PIECE QUI ENGAGE, tant qu'elle n'est pas posee. Passe ce moment, elle ne
+   contraint plus rien et vaut null : la chaine existe, tous les coups legaux
+   redeviennent possibles. */
+Table.prototype.aEngager = function(){
+  if (!this.partie || this.partie.plateau.pieces.length) return null;
+  return this.partie.engage ? this.partie.engage.piece : null;
+};
+
+/* LE NOM D'UN JOUEUR EST SON NOM, RIEN DE PLUS (Pierre, 03/09/2026). On lui
+   collait « (ordinateur) » derriere des qu'une place etait tenue : personne ne
+   l'a jamais demande, et cela se lisait a chaque coup sous le tapis. La meme
+   decision avait deja ete prise cote ecran pour les places autour de la table,
+   elle vaut aussi pour ce que la table raconte. */
 Table.prototype.nomDe = function(siege){
   var s = this.sieges[siege];
-  return s ? (s.robot ? s.nom + " (ordinateur)" : s.nom) : "Place libre";
+  return s ? s.nom : "Place libre";
 };
 
 /* ────────────────────────────────────────────────────── un coup ── */
@@ -1733,6 +1946,13 @@ Table.prototype.jouer = function(siege, indice, cote){
   if (this.partie.tour !== siege) return { erreur: "ce n'est pas ton tour" };
   var piece = this.partie.mains[siege][indice];
   if (!piece) return { erreur: "cette pièce n'est pas dans ta main" };
+  /* LA TABLE VIDE N'ACCEPTE QUE LA PIECE QUI ENGAGE. Sans ce refus, rendre
+     l'engagement au joueur lui permettrait d'ouvrir avec le domino de son
+     choix, et la regle du plus fort double tomberait. */
+  var eng = this.aEngager();
+  if (eng && !MOTEUR.memePiece(piece, eng)){
+    return { erreur: "c'est le " + eng[0] + "-" + eng[1] + " qui engage" };
+  }
   if (!MOTEUR.jouerCoup(this.partie, indice, cote)) return { erreur: "ce coup est refusé" };
   this.sieges[siege].retards = 0;                 /* il joue, il est bien la */
   this.dire(this.nomDe(siege) + " pose le " + piece[0] + "-" + piece[1] + ".");
@@ -1766,10 +1986,27 @@ Table.prototype.faireJouerLesRobots = function(){
       s.annonce = true;
       this.dire(s.nom + " ne répond pas : l'ordinateur joue pour lui.");
     }
+    /* L'ENGAGEMENT D'UNE PLACE TENUE PAR L'ORDINATEUR. Il ne se choisit pas :
+       c'est le plus fort double, et rien d'autre. */
+    if (!this.partie.plateau.pieces.length){
+      var eng = this.partie.engage;
+      MOTEUR.jouerEngagement(this.partie);
+      this.dire(this.nomDe(eng.joueur) + " engage avec le " +
+                eng.piece[0] + "-" + eng.piece[1] + ".");
+      continue;
+    }
+    /* ON RETIENT QUI JOUE AVANT QU'IL JOUE. Le coup fait tourner le tour :
+       nommer this.partie.tour APRES revenait a annoncer le joueur SUIVANT.
+       La table disait « Pierre a joué » alors que Pierre n'avait rien fait, et
+       c'est ce qu'on lisait sous le tapis a chaque coup d'un ordinateur
+       (constate le 03/09/2026). Le boude avait sa rustine, tour moins un, qui
+       tombait a faux le jour ou le jeu meurt sur ce boude, puisque le tour ne
+       bouge plus. Retenir le siege regle les deux d'un coup. */
+    var quiJoue = this.partie.tour;
     var avant = this.partie.plateau.pieces.length;
     var fait = MOTEUR.jouerOrdinateur(this.partie);
-    if (fait && fait.boude) this.dire(this.nomDe(this.partie.tour === 0 ? this.joueurs - 1 : this.partie.tour - 1) + " boude.");
-    else if (this.partie.plateau.pieces.length > avant) this.dire(this.nomDe(this.partie.tour) + " a joué.");
+    if (fait && fait.boude) this.dire(this.nomDe(quiJoue) + " boude.");
+    else if (this.partie.plateau.pieces.length > avant) this.dire(this.nomDe(quiJoue) + " a joué.");
   }
   if (this.partie && this.partie.fini) this.clore();
 };
@@ -1799,9 +2036,9 @@ Table.prototype.clore = function(){
     return;
   }
 
-  /* CINQ DONNES ET LE MATCH EST JOUE. Celui qui en a gagne le moins est
-     SUPER COCHON. Plusieurs derniers a egalite le sont tous : on ne
-     departage pas ce que la table n'a pas departage. */
+  /* LES DONNES ANNONCEES SONT JOUEES, LE MATCH EST FINI. Celui qui en a gagne
+     le moins est SUPER COCHON. Plusieurs derniers a egalite le sont tous : on
+     ne departage pas ce que la table n'a pas departage. */
   if (this.donnes >= this.donnesMax){
     this.finie = true;
     var camps = this.partie && this.partie.equipes ? 2 : this.joueurs;
@@ -1809,7 +2046,7 @@ Table.prototype.clore = function(){
     for (c = 0; c < camps; c++) mini = Math.min(mini, this.score[c] || 0);
     this.superCochon = [];
     for (c = 0; c < camps; c++) if ((this.score[c] || 0) === mini) this.superCochon.push(c);
-    this.dire("Cinq donnes jouées, le match est fini.");
+    this.dire((this.donnesMax === 3 ? "Trois" : "Cinq") + " donnes jouées, le match est fini.");
   }
 };
 
@@ -1846,6 +2083,9 @@ Table.prototype.etatPour = function(siege){
     donnesMax: this.donnesMax,
     superCochon: this.superCochon,
     journal: this.journal.slice(-8),
+    /* La conversation part avec l'etat : celui qui rejoint la table la lit
+       depuis le debut, celui qui revient d'une coupure ne l'a pas ratee. */
+    tchat: this.tchat,
     enAttente: !this.complete()
   };
 
@@ -1878,9 +2118,17 @@ Table.prototype.etatPour = function(siege){
   vue.fini = this.partie.fini;
   vue.talon = (this.variante === "pioche") ? this.partie.talon.length : 0;
 
+  /* LA PIECE QUI ENGAGE NE SE DIT QU'A CELUI QUI LA TIENT. Elle est encore
+     dans une main cachee : l'envoyer a toute la table donnerait a chacun un
+     domino du jeu de son voisin. Les autres voient seulement que la table est
+     vide et qui doit ouvrir. */
+  vue.aEngager = vue.aMoi ? this.aEngager() : null;
+
   /* MA MAIN, et elle seule. */
   vue.main = (this.partie.mains[siege] || []).map(function(p){ return [p[0], p[1]]; });
-  vue.coups = vue.aMoi ? MOTEUR.coupsPossibles(this.partie.mains[siege], this.partie.plateau) : [];
+  vue.coups = vue.aMoi
+    ? MOTEUR.coupsAutorises(this.partie.mains[siege], this.partie.plateau, this.aEngager())
+    : [];
 
   /* La donne finie, tout le monde retourne : c'est le geste de la table, et
      c'est le SEUL moment ou les mains des autres deviennent publiques. */
@@ -1903,6 +2151,7 @@ Table.prototype.resume = function(){
     table: TABLES[this.joueurs].nom,
     joueurs: this.joueurs,
     variante: this.variante,
+    donnesMax: this.donnesMax,
     assis: assis,
     places: this.places,
     libres: this.places - this.sieges.length,
@@ -1987,7 +2236,10 @@ function listerTables(){
     if (!t.length){ liste.innerHTML = '<p class="salon__note">Aucune table ouverte. Ouvre la tienne.</p>'; return; }
     var html = "";
     for (var i = 0; i < t.length; i++){
-      html += '<div class="salon__ligne"><span><b>' + t[i].table + '</b>' +
+      /* LA LONGUEUR DU MATCH SE LIT AVANT DE S'ASSEOIR : trois donnes ou
+         cinq, ce n'est pas le meme engagement de temps. */
+      var enN = (t[i].donnesMax === 3) ? " en 3 donnes" : " en 5 donnes";
+      html += '<div class="salon__ligne"><span><b>' + t[i].table + '</b>' + enN +
         (t[i].assis.length ? ' &nbsp;' + t[i].assis.join(", ") : "") +
         '</span><span class="salon__places">' + t[i].libres + ' place' +
         (t[i].libres > 1 ? "s" : "") + '</span>' +
@@ -2044,23 +2296,24 @@ function monJeton(){
   return JETON;
 }
 
-function ouvrirTable(joueurs, variante){
+function ouvrirTable(joueurs, variante, donnes){
   if (!exigerLeNom()) return;
   couperLaPrecedente();
   if (SERVEUR){
     fetch(SERVEUR + "/creer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ joueurs: joueurs, variante: variante })
+      body: JSON.stringify({ joueurs: joueurs, variante: variante, donnes: donnes })
     }).then(function(r){ return r.json(); })
-      .then(function(d){ if (d.id) rejoindreTable(d.id, joueurs, variante); })
+      .then(function(d){ if (d.id) rejoindreTable(d.id, joueurs, variante, donnes); })
       .catch(function(){ dire("Le serveur ne répond pas."); });
     return;
   }
 
   /* Sans serveur : l'arbitre tourne ici, et les autres places sont tenues
      par l'ordinateur, exactement comme une place laissee vacante en ligne. */
-  var arbitre = new Table({ id: "locale", joueurs: joueurs, variante: variante });
+  var arbitre = new Table({ id: "locale", joueurs: joueurs, variante: variante,
+                            donnesMax: donnes });
   var place = arbitre.asseoir(exigerLeNom(), monJeton());
   for (var j = 1; j < joueurs; j++){
     arbitre.asseoir(MOTEUR.NOMS[j], "robot" + j);
@@ -2082,10 +2335,20 @@ function ouvrirTable(joueurs, variante){
    fois, et l'on repart des que le reseau revient. */
 var essais = 0, rappel = null;
 
-function rejoindreTable(id, joueurs, variante){
+function rejoindreTable(id, joueurs, variante, donnes){
   var nom = exigerLeNom();
   if (!nom) return;
-  connecter(id, nom, joueurs, variante);
+  if (joueurs){ connecter(id, nom, joueurs, variante, donnes); return; }
+
+  /* ON ARRIVE PAR UN LIEN : ON NE SAIT RIEN DE LA TABLE. On envoyait alors
+     nos propres valeurs par defaut, et c'est l'arbitre deja en place qui les
+     ignorait. Cela tenait tant qu'il etait en memoire ; le jour ou il n'y est
+     plus, c'est l'invite qui recree la table, et il la recree a trois places,
+     en chinois, en cinq donnes, quoi qu'ait choisi celui qui l'a ouverte.
+     On demande donc a la table ce qu'elle est avant de s'y asseoir. */
+  fetch(SERVEUR + "/table/" + id).then(function(r){ return r.json(); })
+    .then(function(d){ connecter(id, nom, d.joueurs, d.variante, d.donnesMax); })
+    .catch(function(){ connecter(id, nom, joueurs, variante, donnes); });
 }
 
 /* ON NE S'ASSOIT JAMAIS A DEUX TABLES A LA FOIS. Ouvrir une seconde table
@@ -2103,15 +2366,16 @@ function couperLaPrecedente(){
   arreterSablier();
 }
 
-function connecter(id, nom, joueurs, variante){
+function connecter(id, nom, joueurs, variante, donnes){
   couperLaPrecedente();
   clearTimeout(rappel); rappel = null;
   var url = SERVEUR.replace(/^http/, "ws") + "/table/" + id +
     "?nom=" + encodeURIComponent(nom) + "&jeton=" + encodeURIComponent(monJeton()) +
-    "&joueurs=" + (joueurs || 3) + "&variante=" + (variante || "chinois");
+    "&joueurs=" + (joueurs || 3) + "&variante=" + (variante || "chinois") +
+    "&donnes=" + (Number(donnes) === 5 ? 5 : 3);
   var ws = new WebSocket(url);
   ligne = { arbitre: null, ws: ws, monSiege: -1, id: id,
-            nom: nom, joueurs: joueurs, variante: variante, parti: false };
+            nom: nom, joueurs: joueurs, variante: variante, donnes: donnes, parti: false };
   fermerSalon();
   dire(essais ? "On te remet à ta place…" : "Connexion à la table…");
 
@@ -2146,7 +2410,7 @@ function reprendre(){
   dire("Connexion perdue. On te remet à ta place… (" + essais + ")");
   clearTimeout(rappel);
   rappel = setTimeout(function(){
-    connecter(lu.id, lu.nom, lu.joueurs, lu.variante);
+    connecter(lu.id, lu.nom, lu.joueurs, lu.variante, lu.donnes);
   }, attente);
 }
 
@@ -2167,6 +2431,9 @@ function quitterLaTable(){
   clearTimeout(reveil); reveil = null;
   arreterSablier();
   var bl = $("#invite"); if (bl) bl.hidden = true;
+  /* On ne garde rien de la conversation d'une table qu'on quitte : la
+     suivante commence sur un fil vide, et la pastille repart de zero. */
+  tchatOuvert = false; tchatSignature = ""; tchatLus = 0;
   if (location.hash){ try { history.replaceState(null, "", location.pathname); } catch (e) {} }
   ligne = null;
   $("#quitter").hidden = true;
@@ -2307,6 +2574,10 @@ function afficherVue(vue){
     fini: !!vue.fini,
     resultat: vue.resultat || null,
     journal: journal,
+    /* LA PIECE QUI ENGAGE, quand c'est a moi de la poser. Tant qu'elle est la,
+       elle est le SEUL coup que l'ecran acceptera : la table vide rendrait
+       sinon toute la main jouable, et l'on ouvrirait avec n'importe quoi. */
+    aEngager: vue.aEngager || null,
     enLigne: true
   };
 
@@ -2334,6 +2605,12 @@ function afficherVue(vue){
   if (vue.journal && vue.journal.length && !vue.enAttente && !verdictOuvert){
     dire(vue.journal[vue.journal.length - 1]);
   }
+  /* C'EST A MOI D'ENGAGER. On le dit en clair : sans cette phrase, le joueur
+     voit sa main presque entierement grisee et un seul domino cercle d'or,
+     sans savoir pourquoi ni ce qu'on attend de lui. */
+  if (vue.aEngager && !verdictOuvert && !vue.enAttente){
+    dire("À toi d'engager : pose le " + vue.aEngager[0] + "-" + vue.aEngager[1] + ".");
+  }
   if (vue.fini && !vue.finie) $("#rejouer").textContent = "Donne suivante";
   else $("#rejouer").textContent = "Nouvelle partie";
 }
@@ -2360,6 +2637,7 @@ function envoyerEnLigne(message){
   if (message.t === "jouer")         r = a.jouer(ligne.monSiege, message.i, message.cote);
   else if (message.t === "bouder")   r = a.bouder(ligne.monSiege);
   else if (message.t === "relancer") r = a.relancer();
+  else if (message.t === "parler")   r = a.parler(ligne.monSiege, message.texte);
   if (r && r.erreur) dire(r.erreur);
   rafraichirLigne();
 }
@@ -2688,7 +2966,8 @@ function dessinerMain(){
   var m = $("#main"), main = partie.mains[monSiege()];
   var moi = $("#siege-bas .place__dit");
   if (moi) moi.textContent = partie.fini ? (MOTEUR.pointsMain(main) + " points") : "";
-  var jouables = {}, coups = partie.fini ? [] : MOTEUR.coupsPossibles(main, partie.plateau);
+  var jouables = {}, coups = partie.fini ? []
+    : MOTEUR.coupsAutorises(main, partie.plateau, partie.aEngager);
   if (partie.tour === monSiege() && !partie.fini){
     for (var k = 0; k < coups.length; k++) jouables[coups[k].i] = true;
   }
@@ -2961,10 +3240,12 @@ function verdictDeLaDonne(){
              detail: "Le jeu est mort et personne ne l'emporte. (" + r.points.join(" / ") + " points)" };
   }
 
-  /* LE MATCH EN LIGNE EST JOUE : cinq donnes, et le dernier est SUPER COCHON.
-     C'est le but que Pierre a voulu donner aux tables en ligne, et c'est le
-     seul moment ou le mot sort en entier. */
+  /* LE MATCH EN LIGNE EST JOUE : trois ou cinq donnes selon ce qu'a choisi
+     celui qui a ouvert la table, et le dernier est SUPER COCHON. C'est le but
+     que Pierre a voulu donner aux tables en ligne, et c'est le seul moment ou
+     le mot sort en entier. */
   if (vue && vue.finie && vue.superCochon && vue.superCochon.length){
+    var enLettres = (vue.donnesMax === 3) ? "Trois" : "Cinq";
     var jeSuisCochon = vue.superCochon.indexOf(monCamp) >= 0;
     var meilleurs = [], mieux = -1, c;
     for (c = 0; c < vue.score.length; c++){
@@ -2976,13 +3257,13 @@ function verdictDeLaDonne(){
       return k === 0 ? "vous deux" : "eux";
     };
     if (jeSuisCochon) return { ton: "honte", mot: "Super cochon !",
-      detail: "Cinq donnes, et tu finis dernier avec " +
+      detail: enLettres + " donnes, et tu finis dernier avec " +
               (vue.score[monCamp] || 0) + " donne" + ((vue.score[monCamp] || 0) > 1 ? "s" : "") +
               " gagnée" + ((vue.score[monCamp] || 0) > 1 ? "s" : "") + ". " +
               (meilleurs.length === 1 ? nomDuCamp(meilleurs[0]) + " remporte le match."
                                       : "Personne ne domine, mais toi tu fermes la marche.") };
     return { ton: "gloire", mot: "Match gagné",
-      detail: "Cinq donnes jouées. Tu finis devant avec " +
+      detail: enLettres + " donnes jouées. Tu finis devant avec " +
               (vue.score[monCamp] || 0) + " donne" + ((vue.score[monCamp] || 0) > 1 ? "s" : "") +
               ". Super cochon pour " +
               vue.superCochon.map(nomDuCamp).join(" et ") + "." };
@@ -3126,11 +3407,156 @@ function partagerLaVictoire(){
   window.open("https://wa.me/?text=" + encodeURIComponent(texte), "_blank", "noopener");
 }
 
+/* ══════════════════════════════════════════ LE TCHAT DE TABLE ══════════
+   Demande par Pierre le 03/09/2026, sur le modele de Ludicash releve le
+   meme jour dans une partie reelle. Trois principes, et ils viennent tous
+   d'un ecran de telephone deja plein :
+   . le tchat se POSE sur le tapis, il ne pousse jamais le jeu ;
+   . la saisie tient sur UNE ligne, la palette s'ouvre par-dessus ;
+   . ferme, il n'est qu'une bulle, avec le compte de ce qui n'a pas ete lu,
+     sans quoi personne ne penserait jamais a l'ouvrir. */
+var tchatOuvert = false;      /* le bloc est-il deplie */
+var tchatSignature = "";      /* pour ne redessiner le fil que s'il a change */
+var tchatLus = 0;             /* le numero du dernier message deja lu */
+
+/* Douze frimousses, pas cent : on choisit d'un coup d'oeil, sans chercher. */
+var TCHAT_FRIMOUSSES = ["👍","😀","😂","😮","😉","😤","🔥","💪","🎉","🙏","🤝","🐉"];
+
+function dessinerTchat(){
+  var bloc = $("#tchat"), bulle = $("#tchat-bulle");
+  if (!bloc || !bulle) return;
+  var vue = enLigne() ? LIGNE.vue() : null;
+  /* Hors ligne il n'y a personne a qui parler : ni bloc, ni bulle. */
+  if (!vue){ bloc.hidden = true; bulle.hidden = true; return; }
+
+  bloc.hidden = !tchatOuvert;
+  bulle.hidden = tchatOuvert;
+  if (tchatOuvert){ remplirTchat(); calerTchat(); }
+
+  var msgs = vue.tchat || [], neufs = 0;
+  for (var i = 0; i < msgs.length; i++){
+    if (msgs[i].n > tchatLus && msgs[i].siege !== vue.monSiege) neufs++;
+  }
+  if (tchatOuvert){
+    if (msgs.length) tchatLus = msgs[msgs.length - 1].n;
+    neufs = 0;
+  }
+  var p = $("#tchat-pastille");
+  p.hidden = !neufs;
+  p.textContent = neufs > 9 ? "9+" : neufs;
+}
+
+function remplirTchat(){
+  var vue = enLigne() ? LIGNE.vue() : null, fil = $("#tchat-fil");
+  if (!fil || !vue) return;
+  var msgs = vue.tchat || [];
+  var signature = msgs.length ? (msgs[msgs.length - 1].n + ":" + msgs.length) : "0";
+  if (signature === tchatSignature) return;          /* rien de neuf, on ne touche a rien */
+  tchatSignature = signature;
+
+  /* ON NE REDESCEND PAS SUR LE DOS DU LECTEUR. Si le joueur est remonte
+     dans le fil, un message qui arrive ne doit pas lui arracher sa lecture :
+     on ne suit le bas que si l'on y etait deja. C'est le geste de Ludicash,
+     a cinquante pixels pres. */
+  var enBas = fil.scrollHeight - (fil.scrollTop + fil.clientHeight) < 50;
+
+  fil.textContent = "";
+  if (!msgs.length){
+    var vide = document.createElement("div");
+    vide.className = "tchat__vide";
+    vide.textContent = "Dis quelque chose à la table.";
+    fil.appendChild(vide);
+  }
+  var precedent = -1;
+  for (var i = 0; i < msgs.length; i++){
+    var m = msgs[i], moi = (m.siege === vue.monSiege);
+    /* Le nom ne se repete pas quand la meme personne enchaine. */
+    if (!moi && m.siege !== precedent){
+      var nom = document.createElement("div");
+      nom.className = "tchat__nom";
+      nom.textContent = m.nom;
+      fil.appendChild(nom);
+    }
+    precedent = moi ? -2 : m.siege;
+    var ligneDiv = document.createElement("div");
+    ligneDiv.className = "tchat__bloc" + (moi ? " tchat__bloc--moi" : "");
+    var mot = document.createElement("span");
+    mot.className = "tchat__mot" + (moi ? " tchat__mot--moi" : "");
+    /* JAMAIS innerHTML ICI. Ce texte est ecrit par un autre joueur : le
+       poser en HTML, c'est lui donner la main sur l'ecran de tout le monde. */
+    mot.textContent = m.texte;
+    ligneDiv.appendChild(mot);
+    fil.appendChild(ligneDiv);
+  }
+  if (enBas) fil.scrollTop = fil.scrollHeight;
+}
+
+/* LE CLAVIER NE DOIT PAS RECOUVRIR LE TCHAT. Sur telephone, ouvrir le
+   clavier ne change pas la hauteur de la fenetre : la barre de saisie se
+   retrouve dessous et l'on ecrit a l'aveugle. On cale donc le bloc sur la
+   zone REELLEMENT visible, celle que le navigateur expose. */
+/* IL NE COUVRE JAMAIS LA MAIN. Pose en bas a droite comme chez eux, il
+   mordait sur le dernier domino du joueur : leur main tient sur un demi-arc
+   au centre, la notre s'etale sur toute la largeur. On le remonte donc juste
+   au-dessus de la main, en la mesurant, plutot que de deviner une hauteur. */
+function calerTchat(){
+  var bloc = $("#tchat");
+  if (!bloc || bloc.hidden) return;
+  var meuble = $(".meuble"), main = $("#main");
+  var bas = 14;
+  if (meuble && main){
+    var hm = meuble.getBoundingClientRect(), hp = main.getBoundingClientRect();
+    if (hp.height) bas = Math.max(14, Math.round(hm.bottom - hp.top) + 8);
+  }
+  var vv = window.visualViewport;
+  var cache = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+  bloc.style.bottom = (cache ? cache + 10 : bas) + "px";
+}
+
+function ouvrirTchat(){
+  tchatOuvert = true;
+  tchatSignature = "";                 /* on refait le fil a l'ouverture */
+  dessinerTchat();
+  try { $("#tchat-champ").focus(); } catch (e) {}
+}
+
+function fermerTchat(){
+  tchatOuvert = false;
+  $("#tchat-palette").hidden = true;
+  $("#tchat").style.bottom = "";
+  dessinerTchat();
+}
+
+function envoyerTchat(e){
+  if (e) e.preventDefault();
+  var champ = $("#tchat-champ");
+  var texte = (champ.value || "").trim();
+  if (!texte) return;
+  if (!lienVivant()){ dire("Connexion perdue. On te remet à ta place…"); return; }
+  envoyerEnLigne({ t: "parler", texte: texte });
+  champ.value = "";
+  $("#tchat-palette").hidden = true;
+  champ.focus();
+}
+
+function basculerPalette(){
+  var pal = $("#tchat-palette");
+  if (!pal.firstChild){
+    for (var i = 0; i < TCHAT_FRIMOUSSES.length; i++){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = TCHAT_FRIMOUSSES[i];
+      pal.appendChild(b);
+    }
+  }
+  pal.hidden = !pal.hidden;
+}
+
 function dessiner(){
   /* Les places et la main D'ABORD : c'est sur elles qu'on mesure l'aire, et
      les mesurer avant de les avoir dessinees donnait la taille d'avant. */
   dessinerMain(); dessinerPlaces(); dessinerScore(); dessinerPioche();
-  dessinerChaine(); majBoutons(); majVerdict(); majPartage();
+  dessinerChaine(); majBoutons(); majVerdict(); majPartage(); dessinerTchat();
 }
 
 /* ───────────────────────────────────────────────────────── les boutons ── */
@@ -3139,7 +3565,8 @@ function monSiege(){ return (ligne && ligne.monSiege >= 0) ? ligne.monSiege : 0;
 function majBoutons(){
   var moi = monSiege();
   var monTour = partie.tour === moi && !partie.fini && !occupe && lienVivant();
-  var coups = monTour ? MOTEUR.coupsPossibles(partie.mains[moi], partie.plateau) : [];
+  var coups = monTour
+    ? MOTEUR.coupsAutorises(partie.mains[moi], partie.plateau, partie.aEngager) : [];
   $("#boude").disabled = !(monTour && coups.length === 0);
 
   var g = false, dr = false;
@@ -3171,7 +3598,7 @@ function murmurer(joueur, mot){
 function toucher(i){
   if (partie.fini || partie.tour !== monSiege() || occupe) return;
   if (!lienVivant()){ dire("Connexion perdue. On te remet à ta place…"); return; }
-  var coups = MOTEUR.coupsPossibles(partie.mains[monSiege()], partie.plateau);
+  var coups = MOTEUR.coupsAutorises(partie.mains[monSiege()], partie.plateau, partie.aEngager);
   var mesCotes = [];
   for (var k = 0; k < coups.length; k++) if (coups[k].i === i) mesCotes.push(coups[k].cote);
   if (!mesCotes.length) return;
@@ -3315,7 +3742,7 @@ function lancerChrono(){
     $("#filigrane").classList.toggle("urgence", restant <= 5);
     if (restant <= 0){
       arreterChrono();
-      var coups = MOTEUR.coupsPossibles(partie.mains[moi], partie.plateau);
+      var coups = MOTEUR.coupsAutorises(partie.mains[moi], partie.plateau, partie.aEngager);
       if (coups.length){
         var c = coups[Math.floor(Math.random() * coups.length)];
         dire("Le temps est tombé, un domino est parti tout seul.");
@@ -3476,6 +3903,27 @@ function demarrer(){
     if (partie) dessinerChaine();
   });
 
+  /* ─── LE TCHAT ───────────────────────────────────────────────────────── */
+  $("#tchat-bulle").addEventListener("click", ouvrirTchat);
+  $("#tchat-replier").addEventListener("click", fermerTchat);
+  $("#tchat-barre").addEventListener("submit", envoyerTchat);
+  $("#tchat-emoji").addEventListener("click", basculerPalette);
+  $("#tchat-palette").addEventListener("click", function(e){
+    if (e.target.tagName !== "BUTTON") return;
+    /* La frimousse s'insere LA OU EST LE CURSEUR, pas au bout : on peut la
+       mettre au milieu d'une phrase sans tout retaper. */
+    var champ = $("#tchat-champ");
+    var i = champ.selectionStart;
+    if (i === null || i === undefined) i = champ.value.length;
+    champ.value = champ.value.slice(0, i) + e.target.textContent + champ.value.slice(i);
+    champ.focus();
+    try { champ.setSelectionRange(i + 2, i + 2); } catch (err) {}
+  });
+  if (window.visualViewport){
+    window.visualViewport.addEventListener("resize", calerTchat);
+    window.visualViewport.addEventListener("scroll", calerTchat);
+  }
+
   $("#partager").addEventListener("click", partagerLaVictoire);
   $("#verdict-partager").addEventListener("click", partagerLaVictoire);
   $("#verdict-suite").addEventListener("click", function(){
@@ -3505,7 +3953,9 @@ function demarrer(){
     if (!enLigne()) $("#adversaire").value = "ordinateur";
   });
   $("#salon-ouvrir").addEventListener("click", function(){
-    ouvrirTable(parseInt($("#salon-joueurs").value, 10) || 3, $("#salon-variante").value);
+    ouvrirTable(parseInt($("#salon-joueurs").value, 10) || 3,
+                $("#salon-variante").value,
+                parseInt($("#salon-donnes").value, 10) === 5 ? 5 : 3);
   });
 
   /* ─── INVITER ────────────────────────────────────────────────────────── */
