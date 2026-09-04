@@ -2176,6 +2176,58 @@ Table.prototype.resume = function(){
   };
 };
 
+/* ═══════════════════════════════════════════ LA TABLE SE RANGE ═══════════
+   POURQUOI, et c'est le bug du 04/09/2026. La table ne vivait que dans la
+   memoire du Durable Object, et Cloudflare decharge celui-ci quelques
+   secondes apres le depart du dernier joueur. Or c'est exactement ce que
+   fait l'hote : il ouvre sa table, puis il bascule dans WhatsApp pour
+   envoyer le lien, son telephone met la page en veille et ferme le socket.
+   Mesure faite sur le serveur vivant : a 5 secondes la table repond encore,
+   a 15 secondes elle repond « table vide ». L'ami qui suivait le lien
+   tombait donc sur une table morte, et l'hote ne retrouvait plus la sienne.
+   On la range a chaque changement, on la retrouve au reveil, et le lien
+   reste valable tant que le salon garde la table.
+
+   Le hasard est une fonction : il ne se range pas, il se remet au reveil. */
+Table.prototype.pourStockage = function(){
+  var p = null, k;
+  if (this.partie){
+    p = {};
+    for (k in this.partie) if (k !== "hasard") p[k] = this.partie[k];
+  }
+  return {
+    v: 1,
+    id: this.id, joueurs: this.joueurs, places: this.places, variante: this.variante,
+    sieges: this.sieges, partie: p,
+    score: this.score, serie: this.serie, meneur: this.meneur,
+    journal: this.journal, finie: this.finie,
+    tchat: this.tchat, tchatN: this.tchatN,
+    donnesMax: this.donnesMax, donnes: this.donnes, superCochon: this.superCochon,
+    delaiCoup: this.delaiCoup, echeance: this.echeance
+  };
+};
+
+Table.rendre = function(range){
+  if (!range || !range.joueurs) return null;
+  var t = new Table({ id: range.id, joueurs: range.joueurs, variante: range.variante,
+                      donnesMax: range.donnesMax, delaiCoup: range.delaiCoup });
+  t.places      = range.places || t.places;
+  t.sieges      = range.sieges || [];
+  t.partie      = range.partie || null;
+  if (t.partie) t.partie.hasard = t.hasard;   /* le hasard se remet, il ne se range pas */
+  t.score       = range.score || [0, 0, 0, 0];
+  t.serie       = range.serie || 0;
+  t.meneur      = (range.meneur === undefined) ? -1 : range.meneur;
+  t.journal     = range.journal || [];
+  t.finie       = !!range.finie;
+  t.tchat       = range.tchat || [];
+  t.tchatN      = range.tchatN || 0;
+  t.donnes      = range.donnes || 0;
+  t.superCochon = range.superCochon || null;
+  t.echeance    = range.echeance || null;
+  return t;
+};
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    LA TABLE EN LIGNE, cote joueur
@@ -2363,8 +2415,32 @@ function rejoindreTable(id, joueurs, variante, donnes){
      en chinois, en cinq donnes, quoi qu'ait choisi celui qui l'a ouverte.
      On demande donc a la table ce qu'elle est avant de s'y asseoir. */
   fetch(SERVEUR + "/table/" + id).then(function(r){ return r.json(); })
-    .then(function(d){ connecter(id, nom, d.joueurs, d.variante, d.donnesMax); })
+    .then(function(d){
+      /* UNE TABLE QUI N'EXISTE PLUS SE DIT. On ouvrait a la place une table
+         NEUVE sous le meme identifiant, avec nos valeurs par defaut : trois
+         places, chinois, trois donnes, quoi qu'ait choisi celui qui nous
+         avait invites. Le convie se retrouvait seul a s'attendre lui-meme,
+         persuade d'etre au bon endroit (constate le 04/09/2026). */
+      if (d && d.erreur){ tableIntrouvable(); return; }
+      connecter(id, nom, d.joueurs, d.variante, d.donnesMax);
+    })
     .catch(function(){ connecter(id, nom, joueurs, variante, donnes); });
+}
+
+/* Le lien menait a une table que le serveur ne connait plus : on le dit la ou
+   le joueur regarde, et on lui rend la main sur le salon. */
+function tableIntrouvable(){
+  if (location.hash){ try { history.replaceState(null, "", location.pathname); } catch (e) {} }
+  ouvrirSalon();
+  var convie = $("#salon-convie");
+  if (convie){
+    convie.hidden = false;
+    convie.querySelector("b").textContent = "Cette table s'est refermée.";
+    convie.querySelector("span").textContent =
+      "Ouvre la tienne et renvoie ton lien, ou assieds-toi à une table ouverte.";
+    var ok = $("#salon-convie-ok"); if (ok) ok.hidden = true;
+  }
+  dire("Cette table n'existe plus.");
 }
 
 /* ON NE S'ASSOIT JAMAIS A DEUX TABLES A LA FOIS. Ouvrir une seconde table
@@ -2392,6 +2468,7 @@ function connecter(id, nom, joueurs, variante, donnes){
   var ws = new WebSocket(url);
   ligne = { arbitre: null, ws: ws, monSiege: -1, id: id,
             nom: nom, joueurs: joueurs, variante: variante, donnes: donnes, parti: false };
+  marquerLaTable(id);
   fermerSalon();
   dire(essais ? "On te remet à ta place…" : "Connexion à la table…");
 
@@ -2417,8 +2494,13 @@ function connecter(id, nom, joueurs, variante, donnes){
 function reprendre(){
   if (!ligne || ligne.parti) return;
   var lu = ligne;
-  if (essais >= 10){
-    dire("La table ne répond plus. Reviens par ton lien quand tu veux.");
+  /* DIX ESSAIS ESPACES FAISAIENT QUARANTE SECONDES, ET ON RENONCAIT. Or
+     quarante secondes, c'est moins que le temps d'ouvrir WhatsApp, de choisir
+     un contact et d'envoyer un lien : l'hote revenait a une page qui avait
+     deja abandonne, et plus rien ne repartait tout seul. On tient huit
+     minutes, et le retour a l'ecran relance aussitot, sans attendre. */
+  if (essais >= 60){
+    dire("La table ne répond plus. Recharge la page pour y revenir.");
     return;
   }
   var attente = Math.min(8000, 800 * Math.pow(2, essais));
@@ -2437,6 +2519,30 @@ if (typeof window !== "undefined"){
     if (ligne && ligne.ws && ligne.ws.readyState !== 1 && !ligne.parti){
       essais = 0; reprendre();
     }
+  });
+
+  /* JE REVIENS SUR LE JEU : ON REPART TOUT DE SUITE. Un telephone ferme le
+     socket des que la page passe en arriere-plan, et c'est ce que fait
+     l'hote a la seconde ou il va envoyer son lien. Attendre le prochain
+     rappel, huit secondes plus tard, lui laisse croire que la table est
+     perdue. On repart des qu'il regarde. */
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState !== "visible") return;
+    if (ligne && !ligne.arbitre && !ligne.parti &&
+        (!ligne.ws || ligne.ws.readyState !== 1)){
+      clearTimeout(rappel); rappel = null;
+      essais = 0; reprendre();
+    }
+  });
+
+  /* ON M'ENVOIE UN SECOND LIEN ALORS QUE LE JEU EST DEJA OUVERT. Le
+     telephone ne recharge pas la page, il ne change que l'adresse : rien ne
+     se passait, et le joueur restait a regarder sa table pendant qu'on
+     l'attendait a une autre. */
+  window.addEventListener("hashchange", function(){
+    var id = tableInvitee();
+    if (!id || (ligne && ligne.id === id)) return;
+    accueillirLInvite();
   });
 }
 
@@ -2468,6 +2574,18 @@ function quitterLaTable(){
    lien qui ne mene nulle part. On ne prend l'adresse courante que si l'on est
    deja sur le web, ce qui laisse le jeu deplacable sans y toucher. */
 var ADRESSE = "https://lsqz971.github.io/lsqz-domino/";
+
+/* MON ADRESSE PORTE MA TABLE. L'hote gardait son identifiant nulle part :
+   il ouvrait sa table, basculait dans WhatsApp pour envoyer le lien, et si
+   son telephone rechargeait la page au retour, il revenait sur le jeu sans
+   aucun moyen de retrouver la table qu'il venait d'ouvrir. Elle est desormais
+   ecrite dans son adresse, exactement comme chez celui qu'il invite : un
+   rechargement le ramene a sa place, avec son jeton et sa main. */
+function marquerLaTable(id){
+  if (!id || id === "locale") return;
+  if (location.protocol !== "http:" && location.protocol !== "https:") return;
+  try { history.replaceState(null, "", location.pathname + "#t=" + id); } catch (e) {}
+}
 
 function lienDeMaTable(){
   if (!ligne || !ligne.id || ligne.id === "locale") return null;
@@ -2510,7 +2628,12 @@ function accueillirLInvite(){
   $("#adversaire").value = "ligne";
   ouvrirSalon();
   var convie = $("#salon-convie");
-  if (convie) convie.hidden = false;
+  if (convie){
+    convie.hidden = false;
+    convie.querySelector("b").textContent = "On t'attend à une table.";
+    convie.querySelector("span").textContent = "Dis ton nom et assieds-toi.";
+    var ok = $("#salon-convie-ok"); if (ok) ok.hidden = false;
+  }
   try { $("#salon-nom").focus(); } catch (e) {}
   return true;
 }
