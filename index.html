@@ -197,7 +197,7 @@ h1{
    Chacun a son coin. C'est ce qui fait qu'on joue AVEC des gens, et pas
    contre un compteur. */
 /* CHACUN TIENT SON JEU DANS LE SENS DE SA PLACE, comme autour d'une vraie
-   table : Zandoli a gauche et Ti Kabwit a droite gardent leurs pieces EN
+   table : Zandoli a gauche et Ti Kabrit a droite gardent leurs pieces EN
    COLONNE le long de leur bord, toi tu etales les tiennes EN LIGNE devant
    toi, en bas. C'est ce detail, et lui seul, qui fait qu'on est assis a la
    table au lieu de regarder un tableau de bord. */
@@ -989,7 +989,7 @@ h1{
     <div class="place place--haut" id="siege-haut" hidden>
       <div class="jeton" id="jeton-haut">K<span class="jeton__n">7</span></div>
       <div class="place__bloc">
-        <div class="place__nom">Ti Kabwit</div>
+        <div class="place__nom">Ti Kabrit</div>
         <div class="place__dos"></div>
         <div class="place__temps"></div>
         <div class="place__dit"></div>
@@ -1182,11 +1182,11 @@ h1{
    PUBLIER.command refuse de mettre en ligne un fichier qui l'aurait perdue. */
 var TALLY = "1AQxXb";
 
-/* Quatre places autour de la table. Zandoli le lezard, Ti Kabwit le cabri,
+/* Quatre places autour de la table. Zandoli le lezard, Ti Kabrit le cabri,
    Manglous la mangouste : trois betes du pays, faciles a dire et a retenir.
-   A quatre, ton partenaire est celui d'en face, donc Ti Kabwit. */
-var NOMS = ["Toi", "Zandoli", "Ti Kabwit", "Manglous"];
-/* Les initiales ne se deduisent pas des noms : "Toi" et "Ti Kabwit"
+   A quatre, ton partenaire est celui d'en face, donc Ti Kabrit. */
+var NOMS = ["Toi", "Zandoli", "Ti Kabrit", "Manglous"];
+/* Les initiales ne se deduisent pas des noms : "Toi" et "Ti Kabrit"
    commencent tous les deux par un T, et deux jetons identiques autour d'une
    table, c'est une confusion par partie. */
 var INITIALES = ["T", "Z", "K", "M"];
@@ -2783,7 +2783,7 @@ function envoyerEnLigne(message){
 
 /* Le nom d'une place : celui du serveur en ligne, celui du pays hors ligne. */
 /* UNE PLACE VIDE EN LIGNE N'EST PAS UN ORDINATEUR. On y ecrivait « Zandoli »
-   et « Ti Kabwit », les noms des adversaires de la table locale : on croyait
+   et « Ti Kabrit », les noms des adversaires de la table locale : on croyait
    que quelqu'un etait deja assis, et l'on n'invitait personne. */
 function nomDeLaPlace(j){
   if (ligne && ligne.vue){
