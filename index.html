@@ -3506,7 +3506,14 @@ function direQuiJeSuis(){
      le champ qui fait foi est déjà en haut de la boîte des tournois. Dès
      qu'un nom est posé, elle reparaît avec le nom, les victoires et le
      tournoi où l'on est. */
-  if (!n){
+  /* ⚠️ CETTE LIGNE N'EXISTE QUE DANS UN TOURNOI (Pierre, 11/09/2026 :
+     « Pete_Roupite · 3 victoires doit être écrit seulement dans les tournois,
+     le nom du joueur doit être écrit seulement dans les tournois »). Hors
+     tournoi, elle n'annonce rien qui serve à la partie en cours : on joue une
+     table ordinaire, le nom n'est le nom de personne d'autre et les victoires
+     ne comptent pour rien. Elle revient dès qu'on entre dans un défi, parce
+     que c'est là qu'un chiffre de victoires veut dire quelque chose. */
+  if (!n || !(tournoi && tournoi.vue)){
     qui.innerHTML = "";
     if (bloc) bloc.hidden = true;
     return;
@@ -3771,6 +3778,7 @@ function chargerLesTournois(silencieux){
 function montrerLAccueil(){
   tournoi = null;
   ecran = "accueil";
+  direQuiJeSuis();      /* plus de défi ouvert : la ligne du nom se retire */
   $("#tr-accueil").hidden = false;
   $("#tr-vivant").hidden = true;
   $("#tr-neuf").hidden = true;
@@ -3967,6 +3975,7 @@ function afficherTournoi(vue){
   var change = !tournoi || tournoi.code !== vue.code || ecran !== "tournoi";
   tournoi = { code: vue.code, vue: vue };
   ecran = "tournoi";
+  direQuiJeSuis();      /* on entre dans un défi : la ligne du nom paraît */
   /* On ne remonte la boîte qu'en ARRIVANT dans un tournoi, jamais au
      rafraîchissement : sinon le classement remonterait sous les doigts de
      celui qui le lit, toutes les six secondes. */
