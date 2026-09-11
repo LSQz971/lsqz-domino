@@ -3497,6 +3497,24 @@ function maLigneDuClassement(d){
    Rien ne se perd : pendant un tournoi, la boîte des tournois s'ouvre en
    touchant la ligne du nom, sous le titre, qui n'existe justement qu'en
    tournoi et qui porte déjà le nom du défi où l'on est. */
+/* ⚠️ LE NIVEAU DU TOURNOI, ET RIEN D'AUTRE (Pierre, 11/09/2026 : « il est
+   évident que dans tous les tournois de tous les jeux les classements, les
+   niveaux de difficulté soient visibles et pris en compte »). Tant qu'il
+   n'existait pas, `tirerLesForces` donnait à CHAQUE adversaire une force tirée
+   au hasard, à CHAQUE donne : deux joueurs du même classement n'avaient pas
+   affronté la même table, et le tableau comparait ce qui n'était pas
+   comparable. Trois sources, de la plus sûre à la plus large : la partie qu'on
+   est en train de jouer, la vue du tournoi ouvert, le tournoi lui-même. Hors
+   tournoi, rien : la table ordinaire garde son mélange. */
+function niveauDuTournoi(){
+  if (maPartieDeTournoi && maPartieDeTournoi.niveau) return maPartieDeTournoi.niveau;
+  if (tournoi && tournoi.vue){
+    if (tournoi.vue.maPartie && tournoi.vue.maPartie.niveau) return tournoi.vue.maPartie.niveau;
+    if (tournoi.vue.niveau) return tournoi.vue.niveau;
+  }
+  return null;
+}
+
 function barreDuTournoi(dedans){
   var q = $("#quitter-tournoi"), o = $("#tournoi-ouvrir");
   if (q) q.hidden = !dedans;
@@ -3845,6 +3863,11 @@ function dessinerLesCartes(){
     } else if (vue){
       mien = vue.maPlace >= 0;
       var bouts = [];
+      /* ⚠️ LE NIVEAU SE LIT DÈS LA CARTE (Pierre, 11/09/2026 : « les niveaux
+         de difficulté soient VISIBLES »). On ne devrait pas avoir à entrer
+         dans un tournoi pour savoir contre quelle force on va jouer : c'est
+         la première chose qui dit ce que vaudra une victoire. */
+      if (vue.niveau) bouts.push("en " + vue.niveau);
       bouts.push(vue.inscrits + (vue.inscrits > 1 ? " joueurs" : " joueur"));
       if (vue.classement && vue.classement.length && vue.classement[0].g){
         bouts.push("en tête : " + echapper(vue.classement[0].nom) + ", " +
@@ -4133,6 +4156,9 @@ function trResume(vue){
   if (vue.solo){
     mots.push(vue.parties ? (vue.parties + " parties chacun") : "parties illimitées");
     mots.push(vue.nomTable + ", " + vue.nomRegles);
+    /* LE NIVEAU SE LIT AVEC LE RESTE DES RÉGLAGES : c'est lui qui dit ce que
+       vaut une victoire au classement. */
+    if (vue.niveau) mots.push("en " + vue.niveau);
   } else {
     mots.push("duels en " + vue.donnes + " donnes, domino européen");
   }
@@ -4179,8 +4205,9 @@ function montrerMonMatch(vue){
       bloc.innerHTML = "<b>" + (q.parties ? ("Partie " + (q.jouees + 1) + " sur " + q.parties + ".")
                                           : ("Tu as joué " + q.jouees + (q.jouees > 1 ? " parties." : " partie."))) + "</b>" +
         "<span>En " + q.nomTable + ", " + q.nomRegles +
-        ". La table et les règles sont imposées, elles sont les mêmes pour " +
-        "tout le monde.</span>" +
+        (q.niveau ? (", en " + q.niveau) : "") +
+        ". La table, les règles et le niveau sont imposés, ils sont les mêmes " +
+        "pour tout le monde.</span>" +
         '<button id="tr-jouer" type="button">Jouer ma partie</button>';
       $("#tr-jouer").addEventListener("click", function(){ jouerMaPartie(vue); });
     }
@@ -4407,7 +4434,7 @@ function jouerMaPartie(vue){
   $("#joueurs").disabled = true;
   $("#variante").disabled = true;
   $("#adversaire").value = "ordinateur";
-  maPartieDeTournoi = { code: tournoi.code };
+  maPartieDeTournoi = { code: tournoi.code, niveau: vue.maPartie.niveau || null };
   /* SON NOM VIENT S'ASSEOIR À SA PLACE. On le prend du classement plutôt que
      du champ : c'est celui que les autres voient, donc le seul qui compte. */
   var moi = null, cl = vue.classement || [];
@@ -5856,7 +5883,17 @@ var FORCES = ["facile", "moyenne", "difficile"];
 
 function tirerLesForces(n){
   var t = ["moyenne"];                       /* la place 0, c'est toi : sans objet */
-  for (var j = 1; j < n; j++) t.push(FORCES[Math.floor(Math.random() * FORCES.length)]);
+  /* ⚠️ DANS UN TOURNOI, LE NIVEAU EST IMPOSÉ ET LE MÊME POUR TOUS (Pierre,
+     11/09/2026). Le mélange au hasard ci-dessous rend une table de domino
+     vivante, et c'est très bien sur une partie ordinaire : on ne sait pas à
+     qui on a affaire, comme autour d'une vraie table. Mais dans un tournoi il
+     rendait le classement faux, puisque chacun affrontait un tirage différent
+     à chaque donne. Le tournoi dit son niveau, et il vaut pour les trois
+     adversaires. */
+  var impose = niveauDuTournoi();
+  for (var j = 1; j < n; j++){
+    t.push(impose || FORCES[Math.floor(Math.random() * FORCES.length)]);
+  }
   return t;
 }
 
