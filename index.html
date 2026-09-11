@@ -69,6 +69,12 @@ h1{
 /* MASQUÉ VEUT DIRE ABSENT : sans cette règle, le display:flex l'emporterait
    sur le display:none de l'attribut hidden et laisserait une bande vide. */
 .moi[hidden]{display:none}
+/* ⚠️ LA LIGNE DU NOM OUVRE LE TOURNOI (posé le 11/09/2026, en même temps que
+   la fusion des deux boutons). Comme « Quitter le tournoi » occupe désormais la
+   case de « Tournoi », c'est elle qui ramène au classement pendant qu'on joue :
+   elle n'existe qu'en tournoi, elle en porte déjà le nom, et on la touche pour
+   y retourner. */
+.moi{cursor:pointer}
 .moi b{color:var(--encre);font-weight:800}
 .moi__sep{opacity:.5}
 /* LE NOM SE TOUCHE POUR SE CHANGER : il en garde la couleur de l'encre, sans
@@ -86,8 +92,9 @@ h1{
    quatre largeurs différentes (130, 80, 90 et 82 px), « La règle » se
    retrouvait seule et centrée sur une deuxième ligne, et l'ensemble se
    lisait comme un tas. Une grille de deux colonnes leur donne à tous la
-   même taille, et les boutons qui n'apparaissent que par moments prennent
-   la ligne entière, ce qui les distingue au premier coup d'œil. */
+   même taille. Elle en garde TOUJOURS quatre, deux par rangée : « Quitter le
+   tournoi » ne s'ajoute pas aux permanents, il prend la case de « Tournoi »
+   le temps du tournoi. */
 .barre{
   display:grid;grid-template-columns:1fr 1fr;gap:7px;flex:none;
   max-width:340px;margin:0 auto;width:100%;
@@ -98,10 +105,14 @@ h1{
   display:flex;align-items:center;justify-content:center;text-align:center;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-/* Ceux-là ne paraissent que dans une situation précise : ils prennent la
-   ligne entière, pour qu'on les remarque au lieu de les confondre avec les
-   quatre boutons permanents. */
-#quitter, #quitter-tournoi{grid-column:1 / -1}
+/* ⚠️ « QUITTER LE TOURNOI » NE PREND PLUS LA LIGNE ENTIÈRE (Pierre,
+   11/09/2026 : « je veux les boutons le plus possible l'un à côté de
+   l'autre »). Il prend la case de « Tournoi », qui s'efface pendant qu'il est
+   là : la barre garde ses deux rangées pleines de deux au lieu d'en ouvrir une
+   troisième à moitié vide. Seul « Quitter la table » garde la ligne entière :
+   il ne paraît qu'en ligne, EN PLUS des quatre permanents, et c'est ce qui le
+   distingue d'eux au premier coup d'œil. */
+#quitter{grid-column:1 / -1}
 .barre button:active{transform:translateY(1px)}
 .barre__pale{
   background:rgba(4,38,18,.52)!important;color:var(--encre-2)!important;
@@ -3304,7 +3315,7 @@ function reprendreMonTournoi(){
       var vue = d && d.vue;
       if (!vue || vue.fini || vue.maPlace < 0){ marquerMonTournoi(null); return; }
       tournoi = { code: vue.code, vue: vue };
-      $("#quitter-tournoi").hidden = false;
+      barreDuTournoi(true);
       retenirMonNom(vue);
     })
     .catch(function(){});
@@ -3476,6 +3487,21 @@ function maLigneDuClassement(d){
   return cl.moi || null;
 }
 
+/* ⚠️ « TOURNOI » ET « QUITTER LE TOURNOI » NE PARAISSENT JAMAIS ENSEMBLE
+   (Pierre, 11/09/2026 : « je veux les boutons le plus possible l'un à côté de
+   l'autre »). Ils occupaient deux cases de la grille, et « Quitter le tournoi »
+   prenait en plus la ligne entière : la barre montait à TROIS rangées, dont une
+   à moitié vide. Ils se relaient maintenant dans la MÊME case, si bien que la
+   barre tient toujours en deux rangées pleines de deux boutons.
+   Rien ne se perd : pendant un tournoi, la boîte des tournois s'ouvre en
+   touchant la ligne du nom, sous le titre, qui n'existe justement qu'en
+   tournoi et qui porte déjà le nom du défi où l'on est. */
+function barreDuTournoi(dedans){
+  var q = $("#quitter-tournoi"), o = $("#tournoi-ouvrir");
+  if (q) q.hidden = !dedans;
+  if (o) o.hidden = !!dedans;
+}
+
 function rafraichirMonBilan(){
   if (!SERVEUR || !monNomAMoi()) return;
   fetch(SERVEUR + "/tournois?jeton=" + encodeURIComponent(monJeton()))
@@ -3597,7 +3623,7 @@ function quitterLeTournoi(){
   }
   monNomDeTournoi = null;            /* « Toi » revient à sa place */
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-  $("#quitter-tournoi").hidden = true;
+  barreDuTournoi(false);
   clearInterval(sondage); sondage = null;
   if (enLigne()) quitterLaTable();
 
@@ -3984,7 +4010,7 @@ function afficherTournoi(vue){
   $("#tr-neuf").hidden = true;
   $("#tr-vivant").hidden = false;
   $("#tr-quitter").hidden = false;
-  $("#quitter-tournoi").hidden = false;
+  barreDuTournoi(true);
   /* ⚠️ PLUS DE « REVENIR À MA TABLE » SUR CET ÉCRAN (Pierre, 11/09/2026 :
      « le bouton revenir à ma table est inutile puisque je n'ai pas encore de
      table »). Il promettait une table qui n'existe pas toujours. Les sorties
@@ -4383,7 +4409,7 @@ function jouerMaPartie(vue){
   var moi = null, cl = vue.classement || [];
   for (var i = 0; i < cl.length; i++) if (cl[i].place === vue.maPlace) moi = cl[i];
   monNomDeTournoi = moi ? moi.nom : (($("#tr-nom").value || "").trim() || null);
-  $("#quitter-tournoi").hidden = false;
+  barreDuTournoi(true);
   donneNeuve();
   remettreLaTableAZero();     /* la partie du tournoi part d'un score vierge */
   majTitre();
@@ -4509,7 +4535,7 @@ function jouerMonMatch(m){
   clearInterval(sondage); sondage = null;
   var champ = $("#salon-nom");
   if (champ) champ.value = nom;
-  $("#quitter-tournoi").hidden = false;
+  barreDuTournoi(true);
   connecter(m.table, nom, 2, m.regles || "chinois", m.donnes || 3);
 }
 
@@ -4519,6 +4545,16 @@ function brancherLesTournois(){
   $("#tr-fermer").addEventListener("click", fermerTournoi);
   $("#tr-quitter").addEventListener("click", quitterLeTournoi);
   $("#quitter-tournoi").addEventListener("click", quitterLeTournoi);
+  /* LA LIGNE DU NOM RAMÈNE AU CLASSEMENT. Elle ne paraît qu'en tournoi, donc
+     elle n'a qu'un seul sens possible, et elle remplace la porte d'entrée que
+     « Quitter le tournoi » occupe pendant ce temps-là. */
+  var monBloc = $("#moi");
+  if (monBloc){
+    monBloc.title = "Voir le classement du tournoi";
+    monBloc.addEventListener("click", function(){
+      if (tournoi && tournoi.vue) ouvrirTournoi();
+    });
+  }
   $("#tr-retour").addEventListener("click", montrerLAccueil);
   $("#tr-neuf-retour").addEventListener("click", montrerLAccueil);
   $("#tr-creer").addEventListener("click", creerTournoi);
