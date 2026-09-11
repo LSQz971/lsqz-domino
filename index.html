@@ -3070,6 +3070,16 @@ function envoyerEnLigne(message){
 /* UNE PLACE VIDE EN LIGNE N'EST PAS UN ORDINATEUR. On y ecrivait « Zandoli »
    et « Ti Kabrit », les noms des adversaires de la table locale : on croyait
    que quelqu'un etait deja assis, et l'on n'invitait personne. */
+/* LE NOM QU'IL A DONNÉ, où qu'il l'ait donné : au tournoi, à une table en
+   ligne, ou dans le formulaire. Les trois écrivent au même endroit. */
+function monNomAMoi(){
+  if (monNomDeTournoi) return monNomDeTournoi;
+  try {
+    var n = (localStorage.getItem("domino-nom") || localStorage.getItem("lsqz-domino-nom") || "").trim();
+    return n || null;
+  } catch (e) { return null; }
+}
+
 function nomDeLaPlace(j){
   if (ligne && ligne.vue){
     var p = ligne.vue.places[j];
@@ -3079,11 +3089,18 @@ function nomDeLaPlace(j){
     if (p && p.nom) return p.nom;
     return "Place libre";
   }
-  /* ⚠️ EN TOURNOI, C'EST SON NOM QUI S'AFFICHE À SA PLACE, pas « Toi »
-     (Pierre, 11/09/2026). Le nom qu'il a donné est celui qui figure au
-     classement : le retrouver sur la table fait le lien entre la partie qu'il
-     joue et le tableau qu'il vient de lire. Hors tournoi, « Toi » revient. */
-  if (j === 0 && monNomDeTournoi) return monNomDeTournoi;
+  /* ⚠️ C'EST SON NOM QUI S'AFFICHE À SA PLACE, pas « Toi » (Pierre,
+     11/09/2026). Dès qu'il a donné un nom, ne serait-ce qu'une fois, c'est
+     celui-là qu'il voit : c'est le même que dans le classement, et le
+     retrouver sur la table fait le lien entre la partie qu'il joue et le
+     tableau qu'il vient de lire.
+     ⚠️ ON NE LE LIT PAS D'UN ÉTAT DE TOURNOI, mais du nom gardé dans le
+     téléphone : un état se perd au rechargement, et « Toi » revenait sans
+     qu'on comprenne pourquoi. */
+  if (j === 0){
+    var mien = monNomAMoi();
+    if (mien) return mien;
+  }
   return MOTEUR.NOMS[j];
 }
 function initialeDeLaPlace(j){
@@ -3091,7 +3108,10 @@ function initialeDeLaPlace(j){
     var p = ligne.vue.places[j];
     return (p && p.nom) ? p.nom.charAt(0).toUpperCase() : "·";
   }
-  if (j === 0 && monNomDeTournoi) return monNomDeTournoi.charAt(0).toUpperCase();
+  if (j === 0){
+    var mien = monNomAMoi();
+    if (mien) return mien.charAt(0).toUpperCase();
+  }
   return MOTEUR.INITIALES[j];
 }
 
