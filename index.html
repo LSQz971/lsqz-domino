@@ -58,6 +58,30 @@ h1{
 }
 .sous{margin:0 0 12px;text-align:center;color:var(--encre-2);font-size:clamp(11px,3vw,13px)}
 
+/* LA LIGNE « QUI JE SUIS ». Le nom, les victoires, le tournoi et sa sortie,
+   sur une ligne sous le titre. Elle passe à la ligne toute seule sur un
+   téléphone et ne pousse jamais la table. */
+.moi{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+  gap:6px;margin:6px 0 10px;min-height:22px;flex:none;
+  font-size:clamp(11px,3vw,13px);color:var(--encre-2);text-align:center;
+}
+.moi b{color:var(--encre);font-weight:800}
+.moi__sep{opacity:.5}
+.moi__lien{
+  background:none;border:0;padding:0;margin:0;width:auto;height:auto;
+  color:var(--or);font:inherit;text-decoration:underline;cursor:pointer;
+}
+.moi__forme{display:flex;gap:6px;align-items:center}
+.moi__forme input{
+  width:140px;padding:5px 9px;border-radius:8px;border:1px solid rgba(0,0,0,.35);
+  background:rgba(0,0,0,.18);color:var(--encre);font:inherit;
+}
+.moi__forme button{
+  width:auto;height:auto;margin:0;padding:5px 12px;border:0;border-radius:8px;
+  background:var(--or);color:#2A1D00;font:inherit;font-weight:800;cursor:pointer;
+}
+
 /* ───────────────────────────────────────────────── la barre de reglages ── */
 /* La barre de tete : ce qu'on touche en jouant, et rien de plus. */
 /* ══ LA BARRE, EN GRILLE DE DEUX ═════════════════════════════════════════
@@ -1059,6 +1083,22 @@ h1{
 <div class="jeu">
 
   <h1 id="titre">Domino martiniquais</h1>
+
+  <!-- ═══ QUI JE SUIS, ET OÙ JE SUIS ═══════════════════════════════════
+       Posé le 11/09/2026 sur les constats de Pierre : « je veux le nom du
+       joueur quelque part sur cette page », « je vois toujours écrit TOI »,
+       « pourquoi je ne vois pas mon nombre de victoires », « comment je
+       fais pour quitter le tournoi ». La page ne disait NI qui tu es, NI ce
+       que tu as gagné, NI où tu es : le nom ne vivait qu'au fond de deux
+       boîtes qu'il fallait ouvrir. Cette ligne le dit sous le titre. -->
+  <div class="moi" id="moi">
+    <span class="moi__qui" id="moi-qui"></span>
+    <form class="moi__forme" id="moi-forme" autocomplete="off" hidden>
+      <input id="moi-saisie" type="text" maxlength="18" placeholder="Ton prénom"
+             aria-label="Ton nom de joueur">
+      <button type="submit">OK</button>
+    </form>
+  </div>
 
 
   <!-- UNE BARRE DE TROIS BOUTONS, ET RIEN D'AUTRE. Les quatre menus se
@@ -3272,13 +3312,109 @@ function trExigerLeNom(){
   var champ = $("#tr-nom"), n = (champ.value || "").trim();
   if (n){
     champ.classList.remove("manque");
-    try { localStorage.setItem("domino-nom", n); } catch (e) {}
-    return n.slice(0, 18);
+    /* LE NOM EST LE MÊME PARTOUT : poserMonNom le garde sous les deux
+       repères, l'affiche sous le titre, le pose à ma place sur la table et
+       le porte au classement. */
+    return poserMonNom(n);
   }
   champ.classList.add("manque");
   champ.focus();
   $("#tr-nom-note").textContent = "Il faut un nom pour entrer dans le classement.";
   return null;
+}
+
+/* ═══ QUI JE SUIS, ET OÙ JE SUIS ═════════════════════════════════════════
+   Le nom vivait au fond de deux boîtes, et l'on n'entrait au classement de
+   tout le monde qu'en rejoignant un tournoi : celui qui jouait seul ne
+   figurait nulle part et voyait « Toi » à sa place, sans savoir où dire son
+   nom. Ces fonctions tiennent la ligne sous le titre. */
+var monBilan = null;      /* ma ligne du classement de tout le monde */
+
+/* DIRE SON NOM SUFFIT POUR ENTRER AU CLASSEMENT. Il s'écrit sous les DEUX
+   repères, celui du tournoi et celui des tables en ligne : le jeu en a deux
+   depuis l'origine, et c'est de là que vient la moitié des « où est passé
+   mon nom ». */
+function poserMonNom(n){
+  var propre = String(n || "").trim().slice(0, 18);
+  if (!propre) return "";
+  try {
+    localStorage.setItem("domino-nom", propre);
+    localStorage.setItem("lsqz-domino-nom", propre);
+  } catch (e) {}
+  if ($("#tr-nom")) $("#tr-nom").value = propre;
+  if ($("#salon-nom")) $("#salon-nom").value = propre;
+  direQuiJeSuis();
+  rafraichirLaTable();
+  if (SERVEUR){
+    fetch(SERVEUR + "/classement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jeton: monJeton(), nom: propre })
+    }).then(function(){ rafraichirMonBilan(); }).catch(function(){});
+  }
+  return propre;
+}
+
+/* LA TABLE PORTE LE NOM TOUT DE SUITE, sans attendre la partie suivante :
+   c'est `nomDeLaPlace` qui le lit, il suffit de redessiner. */
+function rafraichirLaTable(){
+  try { if (typeof dessiner === "function") dessiner(); } catch (e) {}
+  try { if (typeof rafraichirLigne === "function" && ligne) rafraichirLigne(); } catch (e) {}
+}
+
+function maLigneDuClassement(d){
+  var cl = d && d.classement;
+  if (!cl) return null;
+  var l = cl.lignes || [];
+  for (var i = 0; i < l.length; i++) if (l[i].moi) return l[i];
+  return cl.moi || null;
+}
+
+function rafraichirMonBilan(){
+  if (!SERVEUR || !monNomAMoi()) return;
+  fetch(SERVEUR + "/tournois?jeton=" + encodeURIComponent(monJeton()))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      tousLesTournois = d;
+      monBilan = maLigneDuClassement(d);
+      direQuiJeSuis();
+    }).catch(function(){});
+}
+
+function ouvrirMaSaisie(){
+  var f = $("#moi-forme"), c = $("#moi-saisie");
+  f.hidden = false;
+  c.value = monNomAMoi() || "";
+  c.focus();
+  try { c.select(); } catch (e) {}
+}
+
+function direQuiJeSuis(){
+  var qui = $("#moi-qui");
+  if (!qui) return;
+  var n = monNomAMoi();
+  if (!n){
+    qui.innerHTML = '<button class="moi__lien" id="moi-dire" type="button">Dis ton nom</button>' +
+                    " et tu entres dans le classement.";
+    $("#moi-dire").addEventListener("click", ouvrirMaSaisie);
+    return;
+  }
+  var html = "<b>" + echapper(n) + "</b>" +
+             ' <button class="moi__lien" id="moi-changer" type="button">changer</button>';
+  /* ⚠️ LE CHIFFRE S'AFFICHE MÊME À ZÉRO : c'est celui qu'on cherche à faire
+     monter, et l'escamoter fait croire qu'il n'existe pas. */
+  if (monBilan){
+    html += ' <span class="moi__sep">·</span> <b>' + monBilan.v + "</b> " +
+            (monBilan.v > 1 ? "victoires" : "victoire");
+  }
+  /* ET OÙ JE SUIS, avec la sortie à portée de doigt. */
+  if (tournoi && tournoi.vue){
+    html += ' <span class="moi__sep">·</span> ' + echapper(tournoi.vue.nom) +
+            ' <button class="moi__lien" id="moi-quitter" type="button">quitter</button>';
+  }
+  qui.innerHTML = html;
+  $("#moi-changer").addEventListener("click", ouvrirMaSaisie);
+  if ($("#moi-quitter")) $("#moi-quitter").addEventListener("click", quitterLeTournoi);
 }
 
 /* ─────────────────────────────────────────────── ouvrir, fermer, quitter ── */
@@ -3475,6 +3611,8 @@ function chargerLesTournois(silencieux){
   if (mien) url += "&fanmi=" + encodeURIComponent(mien);
   fetch(url).then(function(r){ return r.json(); }).then(function(d){
     tousLesTournois = d;
+    monBilan = maLigneDuClassement(d);
+    direQuiJeSuis();
     if (tournoi && tournoi.code){
       /* Un tournoi est ouvert à l'écran : on le rafraîchit avec ce que la
          même requête vient de rendre, sans en relancer une seconde. */
@@ -5585,6 +5723,15 @@ function demarrer(){
      d'invitation, parce que c'est lui qui decide si l'on ouvre le tournoi ou
      la table : un lien de tournoi passe devant un lien de table. */
   brancherLesTournois();
+
+  /* LA LIGNE « QUI JE SUIS », branchée et rendue tout de suite : elle est
+     là avant même que le serveur ait répondu. */
+  $("#moi-forme").addEventListener("submit", function(e){
+    e.preventDefault();
+    if (poserMonNom($("#moi-saisie").value)) $("#moi-forme").hidden = true;
+  });
+  direQuiJeSuis();
+  rafraichirMonBilan();
 
   /* ON ARRIVE PEUT-ETRE PAR UN LIEN D'INVITATION. C'est la derniere chose
      qu'on regarde au demarrage, une fois tous les boutons en place. */
