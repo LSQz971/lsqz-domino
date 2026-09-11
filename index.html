@@ -3543,6 +3543,7 @@ function ouvrirTournoi(){
     var garde = localStorage.getItem("domino-nom") || localStorage.getItem("lsqz-domino-nom");
     if (garde && !$("#tr-nom").value) $("#tr-nom").value = garde;
   } catch (e) {}
+  viderLaFile();        /* ce qui n'avait pas pu partir repart maintenant */
   chargerLesTournois();
   armerLeSondage();
   rappelerMonCode();
@@ -3706,6 +3707,16 @@ function quitterLeTournoi(){
   } else {
     $("#tr-v-note").hidden = true;
   }
+
+  /* ⚠️ LA LIGNE DU HAUT SORT DU TOURNOI EN MÊME TEMPS QUE LE JOUEUR (Pierre,
+     11/09/2026 : « j'ai quitté le tournoi, je dois me retrouver sur la page de
+     jeu hors tournoi, or ce n'est visiblement pas le cas »). Elle continuait
+     d'annoncer « · Défi du vendredi » après la sortie, parce que rien ne la
+     redessinait : `tournoi` valait bien null, mais personne ne le lui disait.
+     C'est la seule chose qui restait du tournoi à l'écran, et c'était
+     justement celle qui se lit en premier. */
+  direQuiJeSuis();
+  rafraichirMonBilan();
 
   dire("Tu as quitté le tournoi. Te voilà sur une table ordinaire.");
 }
@@ -4391,26 +4402,81 @@ function rapporterMaPartie(){
      meilleur score possible. */
   var enMain = (r.points && typeof r.points[0] === "number") ? r.points[0] : 0;
 
-  fetch(SERVEUR + "/tournoi/" + mienne.code + "/partie", {
+  enFile({ code: mienne.code, resultat: { gagne: gagne, nul: !!r.nul, points: enMain } });
+  viderLaFile();
+}
+
+/* ═══ AUCUNE VICTOIRE NE SE PERD EN ROUTE ═════════════════════════════════
+   Posé le 11/09/2026 (Pierre : « toutes les victoires du tournoi doivent être
+   enregistrées »). Le résultat partait en un seul essai, et `maPartieDeTournoi`
+   était vidé AVANT l'envoi : une coupure d'une seconde effaçait la partie pour
+   de bon, puisque plus rien ne la réclamait. Le message le disait à moitié,
+   « rouvre le tournoi pour réessayer », mais rouvrir le tournoi ne renvoyait
+   rien du tout.
+   Le résultat se met donc dans une file AVANT de partir, la file survit à un
+   rechargement de la page, et elle se vide toute seule dès que le serveur
+   répond. Un résultat n'en sort que sur un accord du serveur, ou sur son refus
+   motivé (quota atteint, tournoi clos) : ceux-là ne seront jamais acceptés et
+   feraient boucler la file. */
+var LSQZ_FILE = "domino-tournoi-file";
+var fileDuTournoi = lireLaFile();
+var envoiEnCours = false;
+
+function lireLaFile(){
+  try {
+    var brut = localStorage.getItem(LSQZ_FILE);
+    var l = brut ? JSON.parse(brut) : [];
+    return (l && l.length) ? l : [];
+  } catch (e) { return []; }
+}
+
+function garderLaFile(){
+  try {
+    if (fileDuTournoi.length) localStorage.setItem(LSQZ_FILE, JSON.stringify(fileDuTournoi));
+    else localStorage.removeItem(LSQZ_FILE);
+  } catch (e) {}
+}
+
+function enFile(envoi){
+  fileDuTournoi.push(envoi);
+  /* Une file qui gonfle sans fin ne se rattrape plus : au-delà de vingt
+     parties en attente, le réseau n'est plus le problème. */
+  if (fileDuTournoi.length > 20) fileDuTournoi.shift();
+  garderLaFile();
+}
+
+function viderLaFile(){
+  if (!SERVEUR || envoiEnCours || !fileDuTournoi.length) return;
+  var envoi = fileDuTournoi[0];
+  envoiEnCours = true;
+  fetch(SERVEUR + "/tournoi/" + envoi.code + "/partie", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jeton: monJeton(),
-      resultat: { gagne: gagne, nul: !!r.nul, points: enMain }
-    })
+    body: JSON.stringify({ jeton: monJeton(), resultat: envoi.resultat })
   }).then(function(r){ return r.json(); }).then(function(d){
+    envoiEnCours = false;
+    fileDuTournoi.shift();          /* accepté ou refusé, il ne repartira pas */
+    garderLaFile();
     if (d.erreur){ dire(d.erreur); return; }
     var reste = d.reste;
     dire("Comptée pour le tournoi." +
          (reste ? " Il t'en reste " + reste + "." : (reste === 0 ? " C'était ta dernière." : "")));
+    /* ⚠️ LE COMPTEUR DE VICTOIRES SE MET À JOUR TOUT DE SUITE (Pierre,
+       11/09/2026 : « ma victoire n'a pas été enregistrée »). Elle l'était :
+       le serveur comptait juste, mais la ligne sous le titre restait figée sur
+       le chiffre lu à l'ouverture de la page, et ne bougeait qu'en rouvrant la
+       boîte des tournois. On voyait donc « 2 victoires » en en ayant trois. */
+    rafraichirMonBilan();
     if (d.vue){
-      tournoi = { code: mienne.code, vue: d.vue };
+      tournoi = { code: envoi.code, vue: d.vue };
       /* La partie qu'on vient de rapporter a pu clore le tournoi alors que la
          boîte est fermée : personne d'autre ne le verrait. */
       leTournoiSeTermine(d.vue);
     }
+    if (fileDuTournoi.length) viderLaFile();
   }).catch(function(){
-    dire("Le résultat n'a pas pu partir. Rouvre le tournoi pour réessayer.");
+    envoiEnCours = false;           /* la partie RESTE en file, elle repartira */
+    dire("Le résultat n'a pas pu partir. Il repartira tout seul.");
   });
 }
 
@@ -5945,6 +6011,10 @@ function demarrer(){
      là avant même que le serveur ait répondu. */
   direQuiJeSuis();
   rafraichirMonBilan();
+
+  /* UN RÉSULTAT DE TOURNOI RESTÉ EN ATTENTE REPART DÈS LE CHARGEMENT : la
+     coupure de réseau d'hier ne coûte pas la victoire d'hier. */
+  viderLaFile();
 
   /* ON ARRIVE PEUT-ETRE PAR UN LIEN D'INVITATION. C'est la derniere chose
      qu'on regarde au demarrage, une fois tous les boutons en place. */
