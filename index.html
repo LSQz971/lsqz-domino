@@ -66,6 +66,9 @@ h1{
   gap:6px;margin:6px 0 10px;min-height:22px;flex:none;
   font-size:clamp(11px,3vw,13px);color:var(--encre-2);text-align:center;
 }
+/* MASQUÉ VEUT DIRE ABSENT : sans cette règle, le display:flex l'emporterait
+   sur le display:none de l'attribut hidden et laisserait une bande vide. */
+.moi[hidden]{display:none}
 .moi b{color:var(--encre);font-weight:800}
 .moi__sep{opacity:.5}
 /* LE NOM SE TOUCHE POUR SE CHANGER : il en garde la couleur de l'encre, sans
@@ -1089,7 +1092,7 @@ h1{
        fais pour quitter le tournoi ». La page ne disait NI qui tu es, NI ce
        que tu as gagné, NI où tu es : le nom ne vivait qu'au fond de deux
        boîtes qu'il fallait ouvrir. Cette ligne le dit sous le titre. -->
-  <div class="moi" id="moi">
+  <div class="moi" id="moi" hidden>
     <span class="moi__qui" id="moi-qui"></span>
   </div>
 
@@ -3490,22 +3493,25 @@ function rafraichirMonBilan(){
    deux endroits pour dire la même chose, c'est deux endroits à tenir et un
    joueur qui se demande lequel fait foi. On l'emmène donc au seul champ qui
    existe, et cette ligne ne fait plus qu'AFFICHER. */
-function ouvrirMaSaisie(){
-  ouvrirTournoi();
-  var c = $("#tr-nom");
-  if (c){ try { c.focus(); c.select(); } catch (e) {} }
-}
-
 function direQuiJeSuis(){
   var qui = $("#moi-qui");
   if (!qui) return;
+  var bloc = $("#moi");
   var n = monNomAMoi();
+  /* ⚠️ LE NOM NE SE DEMANDE QU'À L'ENTRÉE D'UN TOURNOI (Pierre, 11/09/2026 :
+     « Dis ton nom et tu entres dans le classement, si ce n'est pas dans le
+     tournoi c'est inutile ! »). Comme à Ti Point Ti Croix, cette ligne
+     n'existe donc pas tant qu'il n'y a pas de nom : elle réclamait quelque
+     chose sous le titre, avant que le joueur ait posé le moindre domino, et
+     le champ qui fait foi est déjà en haut de la boîte des tournois. Dès
+     qu'un nom est posé, elle reparaît avec le nom, les victoires et le
+     tournoi où l'on est. */
   if (!n){
-    qui.innerHTML = '<button class="moi__lien" id="moi-dire" type="button">Dis ton nom</button>' +
-                    " et tu entres dans le classement.";
-    $("#moi-dire").addEventListener("click", ouvrirMaSaisie);
+    qui.innerHTML = "";
+    if (bloc) bloc.hidden = true;
     return;
   }
+  if (bloc) bloc.hidden = false;
   /* ⚠️ PLUS DE LIEN « CHANGER » À CÔTÉ DU NOM (Pierre, 11/09/2026 : « c'est
      quoi ce bouton changer ? il sert à rien ! »). Il disait à voix haute ce
      que le nom fait déjà : c'est LE NOM qu'on touche pour le changer, et un
