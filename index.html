@@ -60,13 +60,27 @@ h1{
 
 /* ───────────────────────────────────────────────── la barre de reglages ── */
 /* La barre de tete : ce qu'on touche en jouant, et rien de plus. */
+/* ══ LA BARRE, EN GRILLE DE DEUX ═════════════════════════════════════════
+   Refaite le 11/09/2026. À largeur libre, les quatre boutons faisaient
+   quatre largeurs différentes (130, 80, 90 et 82 px), « La règle » se
+   retrouvait seule et centrée sur une deuxième ligne, et l'ensemble se
+   lisait comme un tas. Une grille de deux colonnes leur donne à tous la
+   même taille, et les boutons qui n'apparaissent que par moments prennent
+   la ligne entière, ce qui les distingue au premier coup d'œil. */
 .barre{
-  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-items:center;flex:none;
+  display:grid;grid-template-columns:1fr 1fr;gap:7px;flex:none;
+  max-width:340px;margin:0 auto;width:100%;
 }
 .barre button{
-  font:inherit;font-size:13px;font-weight:800;padding:9px 15px;border-radius:10px;
+  font:inherit;font-size:13px;font-weight:800;padding:0 10px;height:40px;border-radius:10px;
   border:0;background:var(--or);color:#2A1D00;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+/* Ceux-là ne paraissent que dans une situation précise : ils prennent la
+   ligne entière, pour qu'on les remarque au lieu de les confondre avec les
+   quatre boutons permanents. */
+#quitter, #au-tournoi, #quitter-tournoi{grid-column:1 / -1}
 .barre button:active{transform:translateY(1px)}
 .barre__pale{
   background:rgba(4,38,18,.52)!important;color:var(--encre-2)!important;
