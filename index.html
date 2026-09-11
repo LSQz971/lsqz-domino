@@ -261,6 +261,10 @@ h1{
 .place--haut .place__nom,.place--bas .place__nom{
   max-width:150px;overflow:hidden;text-overflow:ellipsis;
 }
+/* MA PLACE EST EN BAS, ET MA MAIN EST JUSTE À CÔTÉ : un nom long y passait
+   SOUS les dominos et devenait illisible. Il se coupe plus tôt que les
+   autres, c'est le nom qui cède, jamais la main. */
+.place--bas .place__nom{max-width:86px}
 .place--gauche .place__nom,.place--droite .place__nom{
   white-space:normal;line-height:1.15;word-break:break-word;
 }
@@ -3160,7 +3164,14 @@ function initialeDeLaPlace(j){
   }
   if (j === 0){
     var mien = monNomAMoi();
-    if (mien) return mien.charAt(0).toUpperCase();
+    /* ⚠️ DEUX JETONS À LA MÊME LETTRE, C'EST UNE CONFUSION PAR PARTIE.
+       Un joueur nommé Zoé prenait un « Z », exactement celui de Zandoli, et
+       les deux jetons devenaient indiscernables autour de la table. Quand la
+       lettre est déjà prise par une bête du pays, on garde le « T ». */
+    if (mien){
+      var l = mien.charAt(0).toUpperCase();
+      if (MOTEUR.INITIALES.indexOf(l) < 0) return l;
+    }
   }
   return MOTEUR.INITIALES[j];
 }
