@@ -1378,7 +1378,7 @@ h1{
            n'est pas inscrit, c'est lui cacher la seule raison d'entrer. -->
       <div class="salon__convie" id="tr-v-entrer" hidden>
         <b id="tr-v-entrer-titre">Entre dans ce tournoi.</b>
-        <span id="tr-v-entrer-sous">Dis ton nom en haut, et te voilà dans le classement.</span>
+        <span id="tr-v-entrer-sous">Dis ton nom au-dessus, et te voilà dans le classement.</span>
         <button id="tr-rejoindre" type="button">Entrer dans le classement</button>
       </div>
 
@@ -3993,9 +3993,9 @@ function afficherTournoi(vue){
       ? (vue.inscrits + (vue.inscrits > 1 ? " joueurs sont déjà là." : " joueur est déjà là."))
       : "Personne n'est encore entré.";
     $("#tr-v-entrer-sous").textContent = vue.global
-      ? "Dis ton nom en haut de la page, et te voilà dans le classement."
+      ? "Dis ton nom au-dessus, et te voilà dans le classement."
       : (vue.lance ? "Le tournoi a commencé, les inscriptions sont fermées."
-                   : "Dis ton nom en haut de la page, et te voilà dans le classement.");
+                   : "Dis ton nom au-dessus, et te voilà dans le classement.");
     $("#tr-rejoindre").hidden = !vue.global && vue.lance;
   }
 
