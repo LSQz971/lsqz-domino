@@ -4395,6 +4395,10 @@ function jouerMaPartie(vue){
   /* ON GARDE SA TABLE À LUI AVANT DE LUI IMPOSER CELLE DU TOURNOI, et on la
      lui rend en sortant : sans cela, il quitte le tournoi et se retrouve sur
      les réglages du tournoi sans comprendre d'où ils sortent. */
+  /* J'ENTRE, OU JE CONTINUE ? Les réglages gardés ne sont posés qu'à la
+     PREMIÈRE partie du tournoi : leur absence est la seule chose qui distingue
+     une entrée d'une partie de plus. */
+  var jentreDansLeTournoi = !reglagesAvantLeTournoi;
   if (!reglagesAvantLeTournoi){
     reglagesAvantLeTournoi = { joueurs: $("#joueurs").value, variante: $("#variante").value };
   }
@@ -4411,7 +4415,19 @@ function jouerMaPartie(vue){
   monNomDeTournoi = moi ? moi.nom : (($("#tr-nom").value || "").trim() || null);
   barreDuTournoi(true);
   donneNeuve();
-  remettreLaTableAZero();     /* la partie du tournoi part d'un score vierge */
+  /* ⚠️ LE COMPTEUR DU BAS COMPTE LE TOURNOI ENTIER, ET REPART À ZÉRO À CHAQUE
+     TOURNOI (Pierre, 11/09/2026 : « dans le tournoi on peut voir combien de
+     fois Ti Kabrit, Zandoli et Manglous ont gagné, comme dans les parties hors
+     tournoi », puis « à chaque tournoi, en bas, le joueur, Ti Kabrit, Zandoli
+     et Manglous repartent de 0 »). Il se remettait à zéro à CHAQUE partie du
+     tournoi : il affichait donc éternellement 0 - 0 - 0 et ne disait plus rien
+     de personne. Il ne se remet à zéro qu'aux deux bouts, en ENTRANT dans un
+     tournoi et en en sortant (quitterLeTournoi) ; entre les deux il compte les
+     donnes comme hors tournoi. Ces deux remises à zéro sont nécessaires : la
+     clé du score ne connaît que le format de la table (« ch3 »), pas le
+     tournoi, donc sans elles les manches d'un tournoi se liraient sur une
+     partie ordinaire, et celles du tournoi précédent sur le suivant. */
+  if (jentreDansLeTournoi) remettreLaTableAZero();
   majTitre();
   dire(vue.maPartie.parties
     ? ("Partie " + (vue.maPartie.jouees + 1) + " sur " + vue.maPartie.parties + " du " + vue.nom + ".")
