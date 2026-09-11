@@ -98,7 +98,7 @@ h1{
 /* Ceux-là ne paraissent que dans une situation précise : ils prennent la
    ligne entière, pour qu'on les remarque au lieu de les confondre avec les
    quatre boutons permanents. */
-#quitter, #au-tournoi, #quitter-tournoi{grid-column:1 / -1}
+#quitter, #quitter-tournoi{grid-column:1 / -1}
 .barre button:active{transform:translateY(1px)}
 .barre__pale{
   background:rgba(4,38,18,.52)!important;color:var(--encre-2)!important;
@@ -1113,7 +1113,6 @@ h1{
     <!-- ON NE PERD JAMAIS SON TOURNOI DE VUE. Une partie de tournoi se joue
          sur une table ordinaire : sans ce bouton, le joueur qui vient de
          finir ne sait plus par ou revenir au classement. -->
-    <button class="barre__pale" id="au-tournoi" type="button" hidden>Revenir au tournoi</button>
     <!-- LA TROISIÈME SORTIE. On ouvre un tournoi par accident, et jusqu'ici
          la seule proposition était d'y revenir : il fallait aussi pouvoir en
          sortir (Pierre, 11/09/2026). -->
@@ -1422,7 +1421,7 @@ h1{
          lien de l'adresse et rend les menus du jeu. -->
     <div class="tournoi__pieds">
       <button class="bouton--pale" id="tr-quitter" type="button" hidden>Quitter le tournoi</button>
-      <button class="bouton--pale" id="tr-fermer" type="button">Revenir à ma table</button>
+      <button class="bouton--pale" id="tr-fermer" type="button">Fermer</button>
     </div>
   </div>
 </div>
@@ -3263,7 +3262,6 @@ function reprendreMonTournoi(){
       var vue = d && d.vue;
       if (!vue || vue.fini || vue.maPlace < 0){ marquerMonTournoi(null); return; }
       tournoi = { code: vue.code, vue: vue };
-      $("#au-tournoi").hidden = false;
       $("#quitter-tournoi").hidden = false;
       retenirMonNom(vue);
     })
@@ -3414,13 +3412,15 @@ function direQuiJeSuis(){
     html += ' <span class="moi__sep">·</span> <b>' + monBilan.v + "</b> " +
             (monBilan.v > 1 ? "victoires" : "victoire");
   }
-  /* ET OÙ JE SUIS, avec la sortie à portée de doigt. */
+  /* ET OÙ JE SUIS. ⚠️ PLUS DE LIEN « QUITTER » ICI (Pierre, 11/09/2026 :
+     « Défi du vendredi quitter et Quitter le tournoi c'est la même chose,
+     effacer Défi du vendredi quitter »). La ligne DIT où l'on est, le bouton
+     de la barre FAIT sortir : deux mots pour une seule sortie, c'était un de
+     trop. */
   if (tournoi && tournoi.vue){
-    html += ' <span class="moi__sep">·</span> ' + echapper(tournoi.vue.nom) +
-            ' <button class="moi__lien" id="moi-quitter" type="button">quitter</button>';
+    html += ' <span class="moi__sep">·</span> ' + echapper(tournoi.vue.nom);
   }
   qui.innerHTML = html;
-  if ($("#moi-quitter")) $("#moi-quitter").addEventListener("click", quitterLeTournoi);
 }
 
 /* ─────────────────────────────────────────────── ouvrir, fermer, quitter ── */
@@ -3439,7 +3439,8 @@ function ouvrirTournoi(){
 /* SORTIE 1 : on ferme la boîte, et rien ne change. */
 function fermerTournoi(){
   $("#tournoi").hidden = true;
-  $("#tr-fermer").textContent = "Revenir à ma table";
+  $("#tr-fermer").hidden = false;
+  $("#tr-fermer").textContent = "Fermer";
   $("#tr-retour").hidden = false;
   clearInterval(sondage); sondage = null;
   /* On vient de lire son classement de sortie : c'est maintenant que la
@@ -3476,7 +3477,6 @@ function quitterLeTournoi(){
   }
   monNomDeTournoi = null;            /* « Toi » revient à sa place */
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-  $("#au-tournoi").hidden = true;
   $("#quitter-tournoi").hidden = true;
   clearInterval(sondage); sondage = null;
   if (enLigne()) quitterLaTable();
@@ -3529,6 +3529,7 @@ function quitterLeTournoi(){
     /* LE BOUTON DE SORTIE DIT OÙ IL MÈNE. « Revenir à ma JEU » ne disait pas
        qu'on sortait du tournoi, et l'on cherchait un autre bouton qui
        n'existait pas (Pierre, 11/09/2026). */
+    $("#tr-fermer").hidden = false;
     $("#tr-fermer").textContent = "Revenir au jeu, hors tournoi";
     $("#tr-v-partager").textContent = (m && m.g > 1) ? "Partager mes victoires"
                                     : ((m && m.g === 1) ? "Partager ma victoire" : "Partager mon résultat");
@@ -3649,6 +3650,11 @@ function montrerLAccueil(){
   $("#tr-vivant").hidden = true;
   $("#tr-neuf").hidden = true;
   $("#tr-quitter").hidden = true;
+  /* SUR L'ACCUEIL, CE BOUTON EST LA SEULE SORTIE de la boîte : ni croix, ni
+     clic sur le fond. Il se montre donc toujours, et il dit « Fermer », parce
+     qu'une table, à ce moment-là, on n'en a pas forcément une. */
+  $("#tr-fermer").hidden = false;
+  $("#tr-fermer").textContent = "Fermer";
   dessinerLesCartes();
   dessinerLeClassementGeneral();
   remonterLaBoite();
@@ -3845,6 +3851,12 @@ function afficherTournoi(vue){
   $("#tr-vivant").hidden = false;
   $("#tr-quitter").hidden = false;
   $("#quitter-tournoi").hidden = false;
+  /* ⚠️ PLUS DE « REVENIR À MA TABLE » SUR CET ÉCRAN (Pierre, 11/09/2026 :
+     « le bouton revenir à ma table est inutile puisque je n'ai pas encore de
+     table »). Il promettait une table qui n'existe pas toujours. Les sorties
+     de cet écran sont « Quitter le tournoi », « Jouer ma partie » et
+     « ‹ Revenir aux trois tournois ». */
+  $("#tr-fermer").hidden = true;
   /* ON NE SE SOUVIENT QUE DES TOURNOIS OÙ L'ON JOUE VRAIMENT : regarder un
      classement sans y figurer ne doit pas coller le jeu à ce tournoi. */
   marquerMonTournoi(vue.maPlace >= 0 && !vue.fini ? vue.code : null);
@@ -4208,7 +4220,6 @@ function jouerMaPartie(vue){
   var moi = null, cl = vue.classement || [];
   for (var i = 0; i < cl.length; i++) if (cl[i].place === vue.maPlace) moi = cl[i];
   monNomDeTournoi = moi ? moi.nom : (($("#tr-nom").value || "").trim() || null);
-  $("#au-tournoi").hidden = false;
   $("#quitter-tournoi").hidden = false;
   donneNeuve();
   majTitre();
@@ -4311,10 +4322,6 @@ function brancherLesTournois(){
       if (d.erreur){ $("#tr-v-journal").textContent = d.erreur; return; }
       if (d.vue) afficherTournoi(d.vue);
     }).catch(function(){ b.disabled = false; dire("Le serveur ne répond pas."); });
-  });
-  $("#au-tournoi").addEventListener("click", function(){
-    if (enLigne()) quitterLaTable();
-    ouvrirTournoi();
   });
   $("#tr-v-copier").addEventListener("click", function(){
     var champ = $("#tr-v-url"), bouton = this;
@@ -5580,6 +5587,21 @@ function rejouer(){
   }
 
   if (enLigne()){ envoyerEnLigne({ t: "relancer" }); return; }
+
+  /* ⚠️ DANS UN TOURNOI, « Nouvelle partie » REJOUE LE TOURNOI (même défaut
+     qu'à Ti Point Ti Croix, trouvé le 11/09/2026 : « à ce moment-là j'ai 2
+     victoires » alors que le compteur en affichait une). Rapporter une partie
+     vide `maPartieDeTournoi`, si bien que la suivante, lancée d'ici, se
+     jouait HORS tournoi pendant que l'écran affichait encore son nom : elle
+     n'était comptée nulle part. Tant qu'il reste des parties, on la remet
+     dedans, avec la table et les règles du tournoi. */
+  if (!maPartieDeTournoi && tournoi && tournoi.vue && !tournoi.vue.fini && tournoi.vue.maPartie){
+    var mp = tournoi.vue.maPartie;
+    if (mp.reste === null || mp.reste === undefined || mp.reste > 0){
+      jouerMaPartie(tournoi.vue);
+      return;
+    }
+  }
   donneNeuve();
 }
 
