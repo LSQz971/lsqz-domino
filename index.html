@@ -3225,8 +3225,31 @@ function reprendreMonTournoi(){
       tournoi = { code: vue.code, vue: vue };
       $("#au-tournoi").hidden = false;
       $("#quitter-tournoi").hidden = false;
+      retenirMonNom(vue);
     })
     .catch(function(){});
+}
+
+/* ⚠️ LE NOM VIENT DU SERVEUR, PAS D'UNE CLÉ LOCALE. Il était lu dans le
+   téléphone, où il pouvait être vide : après un rechargement, ou si le nom
+   avait été donné sur une version précédente du jeu, la place réaffichait
+   « Toi » alors que le classement, lui, connaissait parfaitement le joueur
+   (Pierre, 11/09/2026). Le tournoi porte son nom : on le prend là, c'est la
+   seule source qui ne ment pas, et on le recopie dans le téléphone au
+   passage, pour les fois où l'on joue hors tournoi. */
+function retenirMonNom(vue){
+  if (!vue || vue.maPlace < 0) return;
+  var cl = vue.classement || [];
+  for (var i = 0; i < cl.length; i++){
+    if (cl[i].place === vue.maPlace && cl[i].nom){
+      monNomDeTournoi = cl[i].nom;
+      try { localStorage.setItem("domino-nom", cl[i].nom); } catch (e) {}
+      var champ = $("#tr-nom");
+      if (champ && !champ.value) champ.value = cl[i].nom;
+      if (typeof dessiner === "function") dessiner();
+      return;
+    }
+  }
 }
 
 function trCode(){
@@ -3681,6 +3704,7 @@ function afficherTournoi(vue){
   /* ON NE SE SOUVIENT QUE DES TOURNOIS OÙ L'ON JOUE VRAIMENT : regarder un
      classement sans y figurer ne doit pas coller le jeu à ce tournoi. */
   marquerMonTournoi(vue.maPlace >= 0 && !vue.fini ? vue.code : null);
+  retenirMonNom(vue);
 
   $("#tr-v-titre").textContent = vue.nom;
   $("#tr-v-sous").textContent = trResume(vue);
