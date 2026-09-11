@@ -3184,18 +3184,17 @@ function nomDeLaPlace(j){
     if (p && p.nom) return p.nom;
     return "Place libre";
   }
-  /* ⚠️ C'EST SON NOM QUI S'AFFICHE À SA PLACE, pas « Toi » (Pierre,
-     11/09/2026). Dès qu'il a donné un nom, ne serait-ce qu'une fois, c'est
-     celui-là qu'il voit : c'est le même que dans le classement, et le
-     retrouver sur la table fait le lien entre la partie qu'il joue et le
-     tableau qu'il vient de lire.
-     ⚠️ ON NE LE LIT PAS D'UN ÉTAT DE TOURNOI, mais du nom gardé dans le
-     téléphone : un état se perd au rechargement, et « Toi » revenait sans
-     qu'on comprenne pourquoi. */
-  if (j === 0){
-    var mien = monNomAMoi();
-    if (mien) return mien;
-  }
+  /* ⚠️ SON NOM À SA PLACE, MAIS SEULEMENT DANS UN TOURNOI (Pierre,
+     11/09/2026 : « quand je quitte le tournoi je dois me retrouver sur la page
+     hors tournoi NEUTRE »). En tournoi, le voir sur la table fait le lien avec
+     le classement qu'il vient de lire, et c'est pour cela qu'il l'avait demandé
+     le matin même. Hors tournoi il n'y a plus de classement à relier, plus
+     personne en face pour le lire, et son nom resté là faisait croire qu'on
+     était encore dans le défi : la place redevient « Toi ».
+     ⚠️ `monNomDeTournoi` SURVIT AU RECHARGEMENT : reprendreMonTournoi() le
+     repose depuis le classement du serveur. C'est donc bien un état de
+     tournoi, et pas une clé du téléphone, qui décide. */
+  if (j === 0 && monNomDeTournoi) return monNomDeTournoi;
   return MOTEUR.NOMS[j];
 }
 function initialeDeLaPlace(j){
@@ -3203,8 +3202,10 @@ function initialeDeLaPlace(j){
     var p = ligne.vue.places[j];
     return (p && p.nom) ? p.nom.charAt(0).toUpperCase() : "·";
   }
+  /* Le jeton suit la même règle que le nom : la lettre du joueur en tournoi,
+     le « T » de « Toi » partout ailleurs. */
   if (j === 0){
-    var mien = monNomAMoi();
+    var mien = monNomDeTournoi;
     /* ⚠️ DEUX JETONS À LA MÊME LETTRE, C'EST UNE CONFUSION PAR PARTIE.
        Un joueur nommé Zoé prenait un « Z », exactement celui de Zandoli, et
        les deux jetons devenaient indiscernables autour de la table. Quand la
@@ -3689,17 +3690,16 @@ function quitterLeTournoi(){
     $("#tournoi").hidden = true;
   }
 
-  if (jetais){
-    var moi = null, cl = vue.classement || [];
-    for (var i = 0; i < cl.length; i++) if (cl[i].place === vue.maPlace) moi = cl[i];
-    var v = moi ? moi.g : 0;
-    partageDeTournoi = {
-      texte: texteDePartage(vue),
-      libelle: v > 1 ? "Partager mes victoires"
-             : (v === 1 ? "Partager ma victoire" : "Partager mon résultat")
-    };
-    majPartage();
-  }
+  /* ⛔ « PARTAGER MES VICTOIRES » NE SUIT PAS LE JOUEUR HORS DU TOURNOI
+     (Pierre, 11/09/2026 : « Partager mes victoires n'est pas sur une page
+     neutre ! »). Le bouton restait sur la table ordinaire jusqu'à la partie
+     suivante : c'était le dernier morceau du tournoi accroché à un écran qui
+     n'en est plus un. Le partage n'est pas perdu pour autant, il est à sa
+     place, sur l'écran de sortie du tournoi qu'on vient de lire, où
+     « Partager mes victoires » (#tr-v-partager) attend juste au-dessus de
+     « Revenir au jeu, hors tournoi ». */
+  partageDeTournoi = null;
+  majPartage();
 
   /* ET LE FORMULAIRE, parce que quitter un tournoi est un moment de fin, au
      même titre que sa clôture : on vient de voir son classement, c'est là
