@@ -68,18 +68,12 @@ h1{
 }
 .moi b{color:var(--encre);font-weight:800}
 .moi__sep{opacity:.5}
+/* LE NOM SE TOUCHE POUR SE CHANGER : il en garde la couleur de l'encre, sans
+   le trait souligné d'un lien, parce qu'il est d'abord une information. */
+.moi__nom{color:var(--encre);font-weight:800;text-decoration:none}
 .moi__lien{
   background:none;border:0;padding:0;margin:0;width:auto;height:auto;
   color:var(--or);font:inherit;text-decoration:underline;cursor:pointer;
-}
-.moi__forme{display:flex;gap:6px;align-items:center}
-.moi__forme input{
-  width:140px;padding:5px 9px;border-radius:8px;border:1px solid rgba(0,0,0,.35);
-  background:rgba(0,0,0,.18);color:var(--encre);font:inherit;
-}
-.moi__forme button{
-  width:auto;height:auto;margin:0;padding:5px 12px;border:0;border-radius:8px;
-  background:var(--or);color:#2A1D00;font:inherit;font-weight:800;cursor:pointer;
 }
 
 /* ───────────────────────────────────────────────── la barre de reglages ── */
@@ -1097,11 +1091,6 @@ h1{
        boîtes qu'il fallait ouvrir. Cette ligne le dit sous le titre. -->
   <div class="moi" id="moi">
     <span class="moi__qui" id="moi-qui"></span>
-    <form class="moi__forme" id="moi-forme" autocomplete="off" hidden>
-      <input id="moi-saisie" type="text" maxlength="18" placeholder="Ton prénom"
-             aria-label="Ton nom de joueur">
-      <button type="submit">OK</button>
-    </form>
   </div>
 
 
@@ -3392,12 +3381,16 @@ function rafraichirMonBilan(){
     }).catch(function(){});
 }
 
+/* ⚠️ AUCUN CHAMP DE NOM ICI (Pierre, 11/09/2026 : « tu entres ton nom quand
+   tu arrives dans le tournoi, pourquoi un bouton pour changer de nom ? »).
+   Il a raison : le champ existe déjà en haut de la boîte des tournois, et
+   deux endroits pour dire la même chose, c'est deux endroits à tenir et un
+   joueur qui se demande lequel fait foi. On l'emmène donc au seul champ qui
+   existe, et cette ligne ne fait plus qu'AFFICHER. */
 function ouvrirMaSaisie(){
-  var f = $("#moi-forme"), c = $("#moi-saisie");
-  f.hidden = false;
-  c.value = monNomAMoi() || "";
-  c.focus();
-  try { c.select(); } catch (e) {}
+  ouvrirTournoi();
+  var c = $("#tr-nom");
+  if (c){ try { c.focus(); c.select(); } catch (e) {} }
 }
 
 function direQuiJeSuis(){
@@ -3410,8 +3403,11 @@ function direQuiJeSuis(){
     $("#moi-dire").addEventListener("click", ouvrirMaSaisie);
     return;
   }
-  var html = "<b>" + echapper(n) + "</b>" +
-             ' <button class="moi__lien" id="moi-changer" type="button">changer</button>';
+  /* ⚠️ PLUS DE LIEN « CHANGER » À CÔTÉ DU NOM (Pierre, 11/09/2026 : « c'est
+     quoi ce bouton changer ? il sert à rien ! »). Il disait à voix haute ce
+     que le nom fait déjà : c'est LE NOM qu'on touche pour le changer, et un
+     mot de plus sur la ligne ne servait qu'à l'encombrer. */
+  var html = '<span class="moi__nom">' + echapper(n) + "</span>";
   /* ⚠️ LE CHIFFRE S'AFFICHE MÊME À ZÉRO : c'est celui qu'on cherche à faire
      monter, et l'escamoter fait croire qu'il n'existe pas. */
   if (monBilan){
@@ -3424,7 +3420,6 @@ function direQuiJeSuis(){
             ' <button class="moi__lien" id="moi-quitter" type="button">quitter</button>';
   }
   qui.innerHTML = html;
-  $("#moi-changer").addEventListener("click", ouvrirMaSaisie);
   if ($("#moi-quitter")) $("#moi-quitter").addEventListener("click", quitterLeTournoi);
 }
 
@@ -5737,10 +5732,6 @@ function demarrer(){
 
   /* LA LIGNE « QUI JE SUIS », branchée et rendue tout de suite : elle est
      là avant même que le serveur ait répondu. */
-  $("#moi-forme").addEventListener("submit", function(e){
-    e.preventDefault();
-    if (poserMonNom($("#moi-saisie").value)) $("#moi-forme").hidden = true;
-  });
   direQuiJeSuis();
   rafraichirMonBilan();
 
