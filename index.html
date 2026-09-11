@@ -3485,6 +3485,7 @@ function quitterLeTournoi(){
      permanents : « Rejouer » et « Tournoi ». C'est l'écran d'un joueur qui
      n'est dans aucun tournoi, et il doit être exactement celui-là. */
   donneNeuve();
+  remettreLaTableAZero();     /* le compteur du bas restait celui du tournoi */
   majTitre();
 
   /* ═══ ON NE PART PAS SANS AVOIR VU SON CLASSEMENT ═══════════════════════
@@ -4222,6 +4223,7 @@ function jouerMaPartie(vue){
   monNomDeTournoi = moi ? moi.nom : (($("#tr-nom").value || "").trim() || null);
   $("#quitter-tournoi").hidden = false;
   donneNeuve();
+  remettreLaTableAZero();     /* la partie du tournoi part d'un score vierge */
   majTitre();
   dire(vue.maPartie.parties
     ? ("Partie " + (vue.maPartie.jouees + 1) + " sur " + vue.maPartie.parties + " du " + vue.nom + ".")
@@ -4395,6 +4397,20 @@ function tableCourante(){
      seulement la derniere. Sans lui, la victoire finale n'a pas de recit. */
   if (!etat.tables[cle].donnes) etat.tables[cle].donnes = [];
   return etat.tables[cle];
+}
+
+/* ON REPART SUR UNE TABLE NEUVE (Pierre, 11/09/2026 : « j'ai cliqué sur
+   quitter le tournoi, je suis sur la page hors tournoi et je vois toujours
+   les résultats en bas comme si j'étais toujours dans le tournoi »). Le
+   compteur du bas appartient à la table qu'on vient de quitter : le garder
+   sur la table suivante fait lire les manches d'un tournoi sur une partie
+   ordinaire, et l'inverse. On le remet donc à zéro en entrant dans un
+   tournoi comme en en sortant. */
+function remettreLaTableAZero(){
+  var t = tableCourante();
+  t.score = [0,0,0,0]; t.serie = 0; t.meneur = -1; t.donnes = [];
+  sauver();
+  dessiner();
 }
 
 /* ────────────────────────────────────────────── dessiner un domino ── */
