@@ -523,14 +523,26 @@ h1{
    c'est aussi ce qui donne envie de partager. */
 .verdict{
   position:absolute;inset:0;z-index:9;
-  display:flex;align-items:center;justify-content:center;padding:14px;
+  /* ⚠️ LE VERDICT DÉFILE AU LIEU DE DÉBORDER (Pierre, 12/09/2026 :
+     « l'affichage coupe une partie » puis « le bouton n'est plus accessible
+     pour la partie suivante »). Avec l'historique des donnes, la boîte devient
+     plus haute que le tapis : le mot « COCHON ! » était rogné en haut et le
+     bouton « Donne suivante » sortait par le bas, hors d'atteinte. Le jeu
+     était bloqué, il fallait recharger la page.
+     ⚠️ ET `align-items` PASSE À `flex-start`, ce n'est pas un détail : un
+     enfant plus grand que son conteneur flex CENTRÉ voit son haut rogné et
+     inatteignable au défilement, dans tous les navigateurs. C'est exactement
+     ce qui coupait le mot. Le centrage revient par `margin:auto` sur la boîte,
+     qui centre tant que ça tient et laisse défiler dès que ça dépasse. */
+  display:flex;align-items:flex-start;justify-content:center;padding:14px;
+  overflow-y:auto;overscroll-behavior:contain;
   background:radial-gradient(ellipse at 50% 45%, rgba(4,30,14,.72) 0%, rgba(3,22,10,.90) 100%);
   animation:verdictFond .28s ease-out;
 }
 @keyframes verdictFond{from{opacity:0}to{opacity:1}}
 
 .verdict__boite{
-  text-align:center;max-width:92%;
+  text-align:center;max-width:92%;width:100%;margin:auto;
   animation:verdictBoite .42s cubic-bezier(.16,1.2,.3,1);
 }
 @keyframes verdictBoite{
@@ -593,7 +605,15 @@ h1{
 
 /* Le tableau des donnes, un joueur par ligne, les points de chaque donne
    puis le total. Une partie entiere se lit d'un coup d'oeil. */
-.verdict__histo{margin-top:12px;display:flex;flex-direction:column;gap:3px}
+/* ⚠️ L'HISTORIQUE DÉFILE SUR LE CÔTÉ AU LIEU DE SORTIR DU CADRE (Pierre,
+   12/09/2026, capture à l'appui : les dernières colonnes passaient derrière le
+   bord droit du tapis). Douze donnes ne tiennent pas en largeur sur un
+   téléphone, et les rétrécir les rendrait illisibles : la ligne se fait donc
+   glisser au doigt, et la colonne du total reste accrochée à droite pour ne
+   jamais perdre le chiffre qui compte. */
+.verdict__histo{margin-top:12px;display:flex;flex-direction:column;gap:3px;
+  overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:2px}
+.verdict__histo .verdict__histoLigne{min-width:max-content}
 .verdict__histoLigne{
   display:flex;align-items:center;gap:5px;font-size:11px;
   padding:5px 9px;border-radius:8px;background:rgba(4,38,18,.42);
@@ -619,6 +639,9 @@ h1{
   border:0;cursor:pointer;
 }
 .verdict__suite{background:var(--or);color:#2A1D00}
+/* LE BOUTON RESTE SOUS LE POUCE, quoi qu'il y ait au-dessus de lui. */
+.verdict__actions{position:sticky;bottom:-14px;padding-bottom:14px;
+  background:linear-gradient(180deg,rgba(3,22,10,0),rgba(3,22,10,.92) 45%)}
 .verdict__partager{background:#25D366;color:#06331A;box-shadow:0 3px 10px rgba(0,0,0,.34)}
 .verdict__actions button:active{transform:translateY(1px)}
 
@@ -5518,8 +5541,12 @@ function majVerdict(){
   v.className = "verdict verdict--" + d.ton;
   $("#verdict-mot").textContent = d.mot;
   $("#verdict-detail").textContent = d.detail;
-  $("#verdict-compte").innerHTML = compte +
-    (d.ton !== "nul" && /cochon/i.test(d.mot) ? historiqueDeLaTable() : "");
+  /* ⚠️ L'HISTORIQUE S'AFFICHE À CHAQUE FIN DE DONNE (Pierre, 12/09/2026 :
+     « après, ça ne m'affiche plus l'historique »). Il ne paraissait que sur un
+     cochon : la donne suivante, gagnée normalement, le faisait disparaître, et
+     l'on croyait à une panne. Le suivi des manches n'a d'intérêt que s'il est
+     toujours là, comme le tableau d'une vraie table. */
+  $("#verdict-compte").innerHTML = compte + historiqueDeLaTable();
   $("#verdict-partager").hidden = !texteDeVictoire();
   $("#verdict-suite").textContent = (enLigne() && LIGNE.vue() && LIGNE.vue().finie)
     ? "Nouvelle partie" : "Donne suivante";
