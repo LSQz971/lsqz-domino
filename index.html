@@ -1482,7 +1482,15 @@ h1{
   <div class="salon__boite">
     <h2>Jouer contre des joueurs en ligne</h2>
 
-    <label class="salon__nom">Ton nom à la table
+    <!-- ⛔ ON NE TAPE PLUS SON NOM ICI (Pierre, 11/09/2026 : « les joueurs
+         mettent leurs noms UNIQUEMENT SEULEMENT quand ils jouent aux tournois,
+         PARTOUT »). C'était la seconde porte, et elle trompait : quelqu'un
+         donnait son prénom pour s'asseoir à une table en ligne, se voyait
+         nommé partout dans le jeu, et n'entrait dans AUCUN classement, parce
+         qu'il n'était inscrit à aucun tournoi. Il croyait jouer le défi.
+         Le champ reste dans la page parce que la table en ligne le lit, mais
+         il est caché et c'est le tournoi, et lui seul, qui le remplit. -->
+    <label class="salon__nom" id="salon-nom-boite" hidden>Ton nom à la table
       <input id="salon-nom" type="text" maxlength="18" placeholder="Ton prénom" autocomplete="off"
              required aria-required="true">
       <span class="salon__note-nom" id="salon-nom-note">Les autres joueurs le verront.</span>
@@ -2707,21 +2715,34 @@ function listerTables(){
    savoir qui arrive. Un champ vide devenait « Joueur », et trois « Joueur »
    a la meme table ne veulent plus rien dire. */
 function monNom(){
-  var n = ($("#salon-nom").value || "").trim();
+  /* ⚠️ LE NOM VIENT DU TOURNOI, ET DE NULLE PART AILLEURS (Pierre,
+     11/09/2026). Ce champ ne se tape plus, il se remplit : on prend ce qu'il
+     porte, et à défaut le nom posé dans les tournois. On n'écrit plus rien
+     dans le téléphone d'ici, sans quoi un nom donné pour une table en ligne
+     redeviendrait « le » nom du joueur sans qu'aucun classement le connaisse. */
+  var champ = $("#salon-nom");
+  var n = (champ && champ.value || "").trim();
+  if (!n && typeof monNomAMoi === "function") n = (monNomAMoi() || "").trim();
   if (!n) return null;
-  try { localStorage.setItem("lsqz-domino-nom", n); } catch (e) {}
   return n.slice(0, 18);
 }
 
 /* Renvoie le nom, ou signale au joueur qu'il en faut un et rend la main. */
 function exigerLeNom(){
+  /* Un seul endroit dans tout le jeu pour dire qui l'on est, et c'est celui
+     qui compte : la boîte des tournois. Qui n'a pas encore donné son nom y est
+     emmené, au lieu d'en poser un second qui ne servirait à rien. */
   var n = monNom();
-  if (n) { $("#salon-nom").classList.remove("manque"); return n; }
-  var champ = $("#salon-nom");
-  champ.classList.add("manque");
-  champ.focus();
-  var note = $("#salon-nom-note");
-  if (note) note.textContent = "Il faut un nom pour t'asseoir à la table.";
+  if (n) {
+    var ok = $("#salon-nom");
+    if (ok){ ok.value = n; ok.classList.remove("manque"); }
+    return n;
+  }
+  /* LE SALON S'EFFACE AVANT : sans cela il reste PAR-DESSUS la boîte des
+     tournois, on voit le champ du nom sans pouvoir le toucher. */
+  if (typeof fermerSalon === "function") fermerSalon();
+  dire("Ton nom se donne dans les Tournois.");
+  if (typeof ouvrirTournoi === "function") ouvrirTournoi();
   return null;
 }
 /* LE JETON NE CHANGE JAMAIS PENDANT UNE VISITE. C'est lui qui dit au serveur
