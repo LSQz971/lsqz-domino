@@ -3402,8 +3402,60 @@ function reprendreMonTournoi(){
       tournoi = { code: vue.code, vue: vue };
       barreDuTournoi(true);
       retenirMonNom(vue);
+      remettreLaPartieDansLeTournoi(vue);
     })
     .catch(function(){});
+}
+
+/* ═══ UN RECHARGEMENT NE FAIT PLUS PERDRE UNE VICTOIRE ════════════════════
+   Posé le 12/09/2026, au TROISIÈME signalement de Pierre : « j'ai commencé
+   avec 5 victoires, j'en ai 5 de plus et il n'y en a que 9 de comptées ».
+   Le chiffre du bas et le chiffre du tournoi divergeaient d'EXACTEMENT une
+   partie par rechargement de page, et voici pourquoi.
+
+   reprendreMonTournoi() rendait la barre et le nom du tournoi : l'écran disait
+   donc « tu y es encore ». Mais il ne rendait PAS `maPartieDeTournoi`, qui est
+   une simple variable et ne survit à aucun rechargement. Or c'est la seule
+   chose que rapporterMaPartie() regarde avant d'envoyer un résultat. La donne
+   ouverte au démarrage par donneNeuve() se jouait donc HORS tournoi pendant
+   que l'écran affichait le tournoi : le compteur du bas la comptait, le
+   serveur ne la voyait jamais, et rien ne le disait. `rejouer()` ne rattrapait
+   le coup qu'à la partie SUIVANTE, d'où une victoire perdue, et une seule, à
+   chaque fois que la page repartait de zéro.
+
+   On remet donc la donne dans le tournoi tout de suite, et de deux façons :
+     • rien n'est encore posé (le cas normal : la réponse du serveur arrive en
+       quelques dixièmes de seconde, bien avant l'engagement) : on relance la
+       donne proprement, avec la table, les règles et le NIVEAU du tournoi,
+       qui sans cela était tiré au hasard ;
+     • une donne est déjà engagée : on ne la casse pas sous les doigts du
+       joueur. On ne l'arme QUE si son format est déjà exactement celui du
+       tournoi ; sinon elle reste hors tournoi et la suivante repartira
+       dedans. Un classement faux serait pire qu'une partie non comptée. */
+function remettreLaPartieDansLeTournoi(vue){
+  if (!vue || vue.fini || !vue.maPartie) return;
+  if (maPartieDeTournoi) return;                 /* déjà armé, il n'y a rien à reprendre */
+  if (typeof enLigne === "function" && enLigne()) return;   /* il est à une table en ligne */
+  var boite = $("#tournoi");
+  if (boite && !boite.hidden) return;            /* la boîte est ouverte : il choisira lui-même */
+  var q = vue.maPartie;
+  if (q.reste !== null && q.reste !== undefined && q.reste <= 0) return;   /* son quota est fait */
+
+  var posees = (partie && partie.plateau && partie.plateau.pieces)
+             ? partie.plateau.pieces.length : 0;
+  if (posees <= 1){ jouerMaPartie(vue, true); return; }
+
+  if (!partie || partie.joueurs !== q.tableJoueurs || partie.variante !== q.regles) return;
+  maPartieDeTournoi = { code: vue.code, niveau: q.niveau || null };
+  $("#joueurs").value = String(q.tableJoueurs);
+  $("#variante").value = q.regles;
+  $("#joueurs").disabled = true;
+  $("#variante").disabled = true;
+  if (!reglagesAvantLeTournoi){
+    reglagesAvantLeTournoi = { joueurs: String(q.tableJoueurs), variante: q.regles };
+  }
+  majTitre();
+  dire("Te revoilà dans " + vue.nom + ". Cette partie compte.");
 }
 
 /* ⚠️ LE NOM VIENT DU SERVEUR, PAS D'UNE CLÉ LOCALE. Il était lu dans le
@@ -3904,6 +3956,13 @@ function chargerLesTournois(silencieux){
 }
 
 function montrerLAccueil(){
+  /* ⚠️ ON NE REMONTE LA BOÎTE QU'EN ARRIVANT SUR L'ACCUEIL, JAMAIS AU
+     RAFRAÎCHISSEMENT (Pierre, 12/09/2026 : « la page refuse de rester en bas,
+     elle remonte sans que je ne lui demande »). Le rappel régulier repasse
+     ici toutes les six secondes : il remontait le classement sous les doigts
+     de celui qui le lisait, et il n'y avait aucun moyen d'en lire le bas.
+     C'est exactement la garde que porte déjà afficherTournoi. */
+  var change = (ecran !== "accueil");
   tournoi = null;
   ecran = "accueil";
   direQuiJeSuis();      /* plus de défi ouvert : la ligne du nom se retire */
@@ -3918,7 +3977,7 @@ function montrerLAccueil(){
   $("#tr-fermer").textContent = "Fermer";
   dessinerLesCartes();
   dessinerLeClassementGeneral();
-  remonterLaBoite();
+  if (change) remonterLaBoite();
 }
 
 /* ⚠️ ON REMONTE LA BOÎTE EN HAUT À CHAQUE CHANGEMENT D'ÉCRAN. Elle défile,
@@ -4538,7 +4597,7 @@ function echapper(s){
 /* On quitte la boîte, on impose la table et les règles du tournoi, et l'on
    joue une partie
    ordinaire. La seule différence est qu'à la fin, terminer() rapporte. */
-function jouerMaPartie(vue){
+function jouerMaPartie(vue, reprise){
   if (!tournoi || !vue || !vue.maPartie) return;
   if (enLigne()) quitterLaTable();
   $("#tournoi").hidden = true;
@@ -4581,9 +4640,14 @@ function jouerMaPartie(vue){
      clé du score ne connaît que le format de la table (« ch3 »), pas le
      tournoi, donc sans elles les manches d'un tournoi se liraient sur une
      partie ordinaire, et celles du tournoi précédent sur le suivant. */
-  if (jentreDansLeTournoi) remettreLaTableAZero();
+  /* ⚠️ UNE REPRISE N'EST PAS UNE ENTRÉE : elle ne remet pas le compteur du bas
+     à zéro. Recharger la page effacerait sinon le score de la table sous les
+     yeux du joueur, qui n'a rien demandé et n'a pas quitté le tournoi. */
+  if (jentreDansLeTournoi && !reprise) remettreLaTableAZero();
   majTitre();
-  dire(vue.maPartie.parties
+  if (reprise){
+    dire("Te revoilà dans " + vue.nom + ". Cette partie compte.");
+  } else dire(vue.maPartie.parties
     ? ("Partie " + (vue.maPartie.jouees + 1) + " sur " + vue.maPartie.parties + " du " + vue.nom + ".")
     : ("Une partie de plus pour " + vue.nom + "."));
 }
@@ -4800,6 +4864,12 @@ function brancherLesTournois(){
      dans le fichier, et les deux bancs de tests ne mesurent plus rien. */
   poserLesNomsTouFaits();
   reprendreMonTournoi();
+  /* ⚠️ CE QUI N'AVAIT PAS PU PARTIR REPART AU DÉMARRAGE (12/09/2026). La file
+     survit au rechargement, mais elle ne se vidait qu'à la fin de la partie
+     SUIVANTE ou à l'ouverture de la boîte : un résultat bloqué par une coupure
+     attendait donc que le joueur revienne jouer, et il n'y revenait pas
+     toujours. Il part maintenant dès que la page s'ouvre. */
+  viderLaFile();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
