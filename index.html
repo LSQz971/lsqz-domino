@@ -1087,6 +1087,30 @@ h1{
   background:rgba(255,214,102,.16);color:var(--encre);
   border-color:rgba(255,214,102,.5);
 }
+/* ═══ LE LIEN VERS LES SIX CLASSEMENTS, ET LEUR PANNEAU ═══════════════════
+   Posé le 20/09/2026, le même jour qu'à Ti Point Ti Croix. Le lien se touche
+   au doigt sur toute la largeur : un mot souligné au milieu d'un tableau se
+   rate une fois sur deux sur un téléphone. */
+.tournoi__lien{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;margin:0 0 12px;height:46px;padding:0 14px;
+  font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;
+  color:var(--encre);background:rgba(4,38,18,.52);
+  border:1px solid rgba(255,214,102,.34);border-radius:11px;
+  letter-spacing:0;text-transform:none;box-shadow:none;
+}
+.tournoi__lien span{font-size:19px;opacity:.7}
+.tournoi__critere{margin:0 0 20px}
+.tournoi__critere h3{margin:0 0 2px}
+.tournoi__critere h4{margin:0 0 4px;font-size:13px;opacity:.8}
+.tournoi__critere .salon__note{margin:0 0 8px}
+/* LE PANNEAU ARRIVE DU CÔTÉ VERS LEQUEL ON VA. Seul celui qui ARRIVE est
+   animé, celui qui part se retire aussitôt : les faire cohabiter obligerait
+   la boîte à prendre la hauteur du plus grand des deux. */
+@keyframes tr-glisse-gauche{ from{transform:translateX(26%);opacity:0} to{transform:none;opacity:1} }
+@keyframes tr-glisse-droite{ from{transform:translateX(-26%);opacity:0} to{transform:none;opacity:1} }
+.glisse--gauche{animation:tr-glisse-gauche .26s ease both}
+.glisse--droite{animation:tr-glisse-droite .26s ease both}
 .tournoi__rang{
   display:flex;align-items:center;gap:10px;padding:9px 4px;text-align:left;
   border-bottom:1px solid rgba(255,255,255,.07);
@@ -1535,6 +1559,14 @@ h1{
            quelqu'un a gagné : c'est ce couple-là qui donne envie de jouer
            aujourd'hui. C'est exactement le tableau de l'écran 2, remonté ici.
            Posé d'abord sur TI POINT TI CROIX, le même jour. -->
+      <!-- ⚠️ LE LIEN VERS LES SIX CLASSEMENTS (Pierre, 20/09/2026). L'accueil
+           garde son tableau, celui de la semaine, qui est celui qu'on vient
+           lire tous les jours. Les six autres lectures du même jeu vivent une
+           porte plus loin. -->
+      <button class="tournoi__lien" id="tr-cl-ouvrir" type="button">
+        Les classements <span aria-hidden="true">›</span>
+      </button>
+
       <div class="tournoi__semaines">
         <div class="tournoi__semaine">
           <h3 id="tr-cl-titre">Classement</h3>
@@ -1545,6 +1577,20 @@ h1{
              qui court toujours en premier. -->
         <div class="tournoi__semaine" id="tr-cl-avant" hidden></div>
       </div>
+    </div>
+
+    <!-- ══ ÉCRAN 4 : LES SIX CLASSEMENTS ═════════════════════════════════
+         Posé le 20/09/2026, le même jour qu'à Ti Point Ti Croix : trois façons
+         de gagner, et pour chacune la semaine qui court à côté du général. Le
+         même jeu se lit six fois, et chaque lecture met quelqu'un d'autre en
+         tête : c'est ce qui fait revenir celui qui ne sera jamais premier au
+         nombre de victoires. -->
+    <div id="tr-classements" hidden>
+      <button class="tournoi__retour" id="tr-cl-retour" type="button"><span>‹</span> Revenir aux tournois</button>
+      <h2>Les classements</h2>
+      <p class="salon__note">Trois façons de gagner. Pour chacune, la semaine qui court
+        et le général.</p>
+      <div id="tr-cl-listes"></div>
     </div>
 
     <!-- ══ ÉCRAN 2 : UN TOURNOI OUVERT ═══════════════════════════════════ -->
@@ -4089,6 +4135,9 @@ function chargerLesTournois(silencieux){
        remplit le nom de son tournoi an fanmi doit pouvoir prendre son temps :
        il se faisait renvoyer à l'accueil au bout de six secondes. */
     if (ecran === "neuf") return;
+    /* ⚠️ NI CELUI QUI LIT LES SIX CLASSEMENTS : on lui redessine ses tableaux
+       avec les chiffres neufs, et on le laisse où il est. */
+    if (ecran === "classements"){ dessinerLesClassements(); return; }
     montrerLAccueil();
   }).catch(function(){ if (!silencieux) dire("Le serveur ne répond pas."); });
 }
@@ -4107,6 +4156,7 @@ function montrerLAccueil(){
   $("#tr-accueil").hidden = false;
   $("#tr-vivant").hidden = true;
   $("#tr-neuf").hidden = true;
+  $("#tr-classements").hidden = true;
   $("#tr-quitter").hidden = true;
   /* SUR L'ACCUEIL, CE BOUTON EST LA SEULE SORTIE de la boîte : ni croix, ni
      clic sur le fond. Il se montre donc toujours, et il dit « Fermer », parce
@@ -4206,6 +4256,223 @@ function dessinerLeClassementGeneral(){
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   LES SIX CLASSEMENTS
+   Posés le 20/09/2026, le même jour qu'à Ti Point Ti Croix et sur la même
+   commande de Pierre. Le même jeu s'y lit de trois façons, chacune sur deux
+   durées : la semaine qui court, et le général. Six tableaux, donc six têtes
+   de classement possibles, et c'est le but : celui qui ne sera jamais premier
+   au nombre de victoires peut être premier au rendement ou à la netteté de
+   ses victoires, et il revient pour ça.
+
+     LE PLUS DE VICTOIRES              le compte brut, celui de l'accueil.
+     LE MOINS DE PARTIES POUR GAGNER   gagner le plus en jouant le moins.
+     LE MOINS DE POINTS POUR GAGNER    la moyenne de points restés en main.
+
+   ⚠️ AU DOMINO, LE TROISIÈME COMPTE LES POINTS EN MAIN, LÀ OÙ TI POINT TI
+   CROIX COMPTE LES COUPS. C'est la même idée dans l'unité du jeu : ce que la
+   victoire a coûté. Zéro est la meilleure valeur, c'est la victoire parfaite,
+   celle où l'on pose son dernier domino sans rien garder.
+
+   ⚠️ LE SEUIL EST CELUI DE LA NBA (Pierre, 20/09/2026 : « ok pr le seuil comme
+   la NBA »). Le fait qui a tranché, relevé sur nba.com le même jour : sans
+   minimum, le classement des tirs à 3 points par réussite met quatre pivots en
+   tête, dont un à 3 sur 3, devant tous les tireurs de la ligue. La NBA exige
+   82 paniers à 3 points pour être classé au pourcentage. Cinq victoires jouent
+   ici le même rôle, et ce seuil ne s'écrit nulle part à l'écran.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+var TR_MINI_PARTIES = 1;      /* on entre dès la première partie */
+
+/* ⚠️ LE SEUIL SE CALCULE, IL N'EST PAS ÉCRIT EN DUR (Pierre, 20/09/2026 :
+   « il faut que tout ça reste dynamique donc adaptable »). C'est la NBA qui
+   donne le principe : elle demande 82 paniers à 3 points sur une saison de 82
+   matchs, autrement dit un minimum CALÉ SUR LA TAILLE DE LA COMPÉTITION, pas
+   un nombre tombé du ciel. Un seuil fixe se périme des deux côtés à la fois :
+   cinq victoires n'écartaient personne à Ti Point Ti Croix, où l'on en compte
+   257, et retiraient deux joueurs sur cinq au domino, qui en est à 16.
+
+   LA RÈGLE : 5 % des victoires du meneur de CE tableau-là, jamais moins de
+   trois. Elle se recalcule à chaque affichage, séparément pour la semaine et
+   pour le général, et elle suit donc le jeu à mesure qu'il grandit.
+   Les deux réglages ci-dessous sont les seuls chiffres à toucher si le curseur
+   doit bouger un jour. */
+var TR_SEUIL_PART = 0.05;     /* la part des victoires du meneur */
+var TR_SEUIL_PLANCHER = 3;    /* et le plancher, quoi qu'il arrive */
+
+function seuilDesVictoires(lignes){
+  var max = 0;
+  for (var i = 0; i < lignes.length; i++) if ((lignes[i].v || 0) > max) max = lignes[i].v;
+  return Math.max(TR_SEUIL_PLANCHER, Math.round(max * TR_SEUIL_PART));
+}
+
+var TR_CL_CRITERES = [
+  { cle: "victoires", titre: "Le plus de victoires",
+    quoi: "Toutes les parties gagnées, comptées une par une.",
+    vide: "Le premier nom de ce tableau est encore à écrire." },
+  { cle: "parties", titre: "Le moins de parties pour gagner",
+    quoi: "La part de parties gagnées.",
+    vide: "Le premier nom de ce tableau est encore à écrire." },
+  { cle: "points", titre: "Le moins de points pour gagner",
+    quoi: "La moyenne de points restés en main.",
+    vide: "Le premier nom de ce tableau est encore à écrire." }
+];
+
+/* LES DEUX SOURCES, RAMENÉES À LA MÊME FORME. Le tournoi dit `g` et le
+   classement de tous les temps dit `v` ; ils parlent tous deux de victoires. */
+function lignesDeLaSemaine(){
+  var vue = (tousLesTournois || {}).vendredi, cl = (vue && vue.classement) || [], l = [];
+  for (var i = 0; i < cl.length; i++){
+    var x = cl[i];
+    /* AU DÉFI DU VENDREDI, TOUTES LES VICTOIRES PORTENT LEURS POINTS : on y
+       joue seul contre l'ordinateur, et le tournoi les compte. */
+    l.push({ nom: x.nom, v: x.g || 0, j: x.j || 0, points: x.points || 0, vPoints: x.g || 0,
+             moi: !!(vue && x.place === vue.maPlace) });
+  }
+  return l;
+}
+
+function lignesDeToujours(){
+  var c = (tousLesTournois || {}).classement, cl = (c && c.lignes) || [], l = [];
+  for (var i = 0; i < cl.length; i++){
+    var x = cl[i];
+    /* AU GÉNÉRAL, `cv` COMPTE LES SEULES VICTOIRES DONT ON CONNAÎT LES POINTS :
+       un match an fanmi se joue entre deux personnes et n'en rapporte pas. */
+    l.push({ nom: x.nom, v: x.v || 0, j: x.j || 0, points: x.c || 0, vPoints: x.cv || 0,
+             moi: !!x.moi });
+  }
+  return l;
+}
+
+/* L'ORDRE D'UN TABLEAU, ET SES DÉPARTAGES. On recopie chaque ligne retenue :
+   les trois tableaux partent des mêmes objets, et poser un rang dans l'un
+   irait écrire dans les deux autres. */
+function classerPar(critere, lignes){
+  var l = [], i, x;
+  /* LE SEUIL DE CE TABLEAU, calculé sur ses propres lignes. */
+  var seuil = seuilDesVictoires(lignes);
+  for (i = 0; i < lignes.length; i++){
+    x = lignes[i];
+    if (critere === "victoires"){ if (x.v <= 0) continue; }
+    else if (critere === "parties"){ if (x.j < TR_MINI_PARTIES || x.v <= 0) continue; }
+    else { if ((x.vPoints || 0) < seuil) continue; }
+    l.push({ nom: x.nom, v: x.v, j: x.j, points: x.points, vPoints: x.vPoints || 0, moi: x.moi });
+  }
+  if (critere === "victoires"){
+    l.sort(function(a, b){
+      if (b.v !== a.v) return b.v - a.v;
+      if (a.j !== b.j) return a.j - b.j;     /* à victoires égales, celui qui a joué le moins */
+      return a.nom.localeCompare(b.nom);
+    });
+  } else if (critere === "parties"){
+    l.sort(function(a, b){
+      var A = a.v / a.j, B = b.v / b.j;
+      if (B !== A) return B - A;
+      if (b.v !== a.v) return b.v - a.v;      /* à part égale, celui qui a gagné le plus */
+      return a.nom.localeCompare(b.nom);
+    });
+  } else {
+    /* ⚠️ UNE MOYENNE DE POINTS, JAMAIS UN POURCENTAGE (Pierre, 20/09/2026 :
+       « pas en pourcentage ! NON ! en nombre de coups ! OUI ! », dit pour les
+       coups de Ti Point Ti Croix et valable ici). Le plus bas mène le tableau,
+       et le titre l'annonce : le MOINS de points pour gagner. */
+    l.sort(function(a, b){
+      var A = a.points / a.vPoints, B = b.points / b.vPoints;
+      if (A !== B) return A - B;
+      if (b.vPoints !== a.vPoints) return b.vPoints - a.vPoints;
+      return a.nom.localeCompare(b.nom);
+    });
+  }
+  for (i = 0; i < l.length; i++) l[i].rang = i + 1;
+  return l;
+}
+
+/* UN TABLEAU, RENDU COMME CEUX DE L'ACCUEIL : même barre, même gros chiffre à
+   droite, pour qu'on les lise sans rien réapprendre. Dix lignes au plus. */
+function htmlUnClassement(critere, lignes, vide){
+  var l = classerPar(critere, lignes);
+  if (!l.length) return '<p class="tournoi__vide">' + vide + "</p>";
+  var html = '<div class="tournoi__barre">';
+  for (var i = 0; i < l.length && i < 10; i++){
+    var x = l[i], gros, petit, sous;
+    if (critere === "victoires"){
+      gros = String(x.v);
+      petit = x.v > 1 ? "victoires" : "victoire";
+      sous = x.j + (x.j > 1 ? " parties jouées" : " partie jouée");
+    } else if (critere === "parties"){
+      gros = Math.round(x.v * 100 / x.j) + " %";
+      petit = "gagnées";
+      sous = x.v + (x.v > 1 ? " victoires" : " victoire") + " sur " + x.j +
+             (x.j > 1 ? " parties" : " partie");
+    } else {
+      /* Une décimale, et la virgule française : sans elle, deux joueurs que
+         tout sépare affichent le même entier dans deux rangs différents. */
+      gros = (Math.round(x.points * 10 / x.vPoints) / 10).toFixed(1).replace(".", ",");
+      petit = "points par victoire";
+      sous = x.vPoints + (x.vPoints > 1 ? " victoires" : " victoire") +
+             " en gardant " + x.points + (x.points > 1 ? " points" : " point");
+    }
+    html += '<div class="tournoi__rang' + (x.moi ? " tournoi__rang--moi" : "") + '">' +
+      '<span class="tournoi__place">' + x.rang + "</span>" +
+      '<span class="tournoi__qui"><b>' + echapper(x.nom) + "</b><em>" + sous + "</em></span>" +
+      '<span class="tournoi__score"><b>' + gros + "</b><small>" + petit + "</small></span>" +
+      "</div>";
+  }
+  html += "</div>";
+  if (l.length > 10) html += '<p class="salon__note">et ' + (l.length - 10) + " autres.</p>";
+  return html;
+}
+
+/* LES SIX TABLEAUX, TROIS SECTIONS DE DEUX COLONNES. Sous 560 px les deux
+   colonnes s'empilent, la semaine qui court en premier. */
+function dessinerLesClassements(){
+  var bac = $("#tr-cl-listes");
+  if (!bac) return;
+  var semaine = lignesDeLaSemaine(), toujours = lignesDeToujours(), html = "";
+  for (var i = 0; i < TR_CL_CRITERES.length; i++){
+    var c = TR_CL_CRITERES[i];
+    html += '<section class="tournoi__critere"><h3>' + c.titre + "</h3>" +
+      '<p class="salon__note">' + c.quoi + "</p>" +
+      '<div class="tournoi__semaines">' +
+        '<div class="tournoi__semaine"><h4>Cette semaine</h4>' +
+          htmlUnClassement(c.cle, semaine, c.vide) + "</div>" +
+        '<div class="tournoi__semaine"><h4>Général</h4>' +
+          htmlUnClassement(c.cle, toujours, c.vide) + "</div>" +
+      "</div></section>";
+  }
+  bac.innerHTML = html;
+}
+
+/* ═══ ALLER AUX CLASSEMENTS, ET EN REVENIR ═══════════════════════════════ */
+function montrerLesClassements(){
+  ecran = "classements";
+  $("#tr-accueil").hidden = true;
+  $("#tr-vivant").hidden = true;
+  $("#tr-neuf").hidden = true;
+  $("#tr-classements").hidden = false;
+  $("#tr-quitter").hidden = true;
+  $("#tr-fermer").hidden = false;
+  $("#tr-fermer").textContent = "Fermer";
+  dessinerLesClassements();
+  glisser($("#tr-classements"), "gauche");
+  remonterLaBoite();
+}
+
+function revenirDesClassements(){
+  montrerLAccueil();
+  glisser($("#tr-accueil"), "droite");
+}
+
+function glisser(bloc, sens){
+  if (!bloc) return;
+  bloc.classList.remove("glisse--gauche", "glisse--droite");
+  /* ON FORCE LE NAVIGATEUR À RELIRE LA POSITION avant de rejouer l'animation :
+     sans cette lecture, retirer puis remettre la classe dans le même souffle
+     ne rejoue rien du tout. */
+  void bloc.offsetWidth;
+  bloc.classList.add(sens === "gauche" ? "glisse--gauche" : "glisse--droite");
+}
+
 /* ─────────────────────────────────────────────── entrer dans un tournoi ── */
 
 function ouvrirUneCarte(cle){
@@ -4214,6 +4481,7 @@ function ouvrirUneCarte(cle){
     /* Personne ne m'a envoyé de lien : je peux en ouvrir un. */
     ecran = "neuf";
     $("#tr-accueil").hidden = true;
+    $("#tr-classements").hidden = true;
     $("#tr-vivant").hidden = true;
     $("#tr-neuf").hidden = false;
     $("#tr-quitter").hidden = true;
@@ -4306,6 +4574,7 @@ function afficherTournoi(vue){
   if (change) remonterLaBoite();
   $("#tr-accueil").hidden = true;
   $("#tr-neuf").hidden = true;
+  $("#tr-classements").hidden = true;
   $("#tr-vivant").hidden = false;
   $("#tr-quitter").hidden = false;
   barreDuTournoi(true);
@@ -4878,6 +5147,8 @@ function jouerMonMatch(m){
 
 /* Tous les boutons de la boîte, branchés d'un coup au démarrage. */
 function brancherLesTournois(){
+  $("#tr-cl-ouvrir").addEventListener("click", montrerLesClassements);
+  $("#tr-cl-retour").addEventListener("click", revenirDesClassements);
   $("#tournoi-ouvrir").addEventListener("click", ouvrirTournoi);
   $("#tr-fermer").addEventListener("click", fermerTournoi);
   $("#tr-quitter").addEventListener("click", quitterLeTournoi);
