@@ -3638,7 +3638,6 @@ function trExigerLeNom(){
    tout le monde qu'en rejoignant un tournoi : celui qui jouait seul ne
    figurait nulle part et voyait « Toi » à sa place, sans savoir où dire son
    nom. Ces fonctions tiennent la ligne sous le titre. */
-var monBilan = null;      /* ma ligne du classement de tout le monde */
 
 /* DIRE SON NOM SUFFIT POUR ENTRER AU CLASSEMENT. Il s'écrit sous les DEUX
    repères, celui du tournoi et celui des tables en ligne : le jeu en a deux
@@ -3738,12 +3737,28 @@ function rafraichirLaTable(){
   try { if (typeof rafraichirLigne === "function" && ligne) rafraichirLigne(); } catch (e) {}
 }
 
-function maLigneDuClassement(d){
-  var cl = d && d.classement;
-  if (!cl) return null;
-  var l = cl.lignes || [];
-  for (var i = 0; i < l.length; i++) if (l[i].moi) return l[i];
-  return cl.moi || null;
+/* ⚠️ LE CHIFFRE DE CETTE LIGNE EST CELUI DU DÉFI OÙ L'ON EST, PAS LE TOTAL DE
+   TOUS LES TEMPS (Pierre, 20/09/2026 : « je veux voir uniquement le nombre de
+   victoire de la semaine, supprimer le nombre de victoire totale »). Le total
+   annonçait 178 victoires juste au-dessus d'un classement de la semaine qui en
+   montrait trois : deux comptes pour une seule question, et le seul qui se
+   vérifie à l'œil est celui du tableau qui suit. Comme cette ligne n'existe
+   que dans un défi, le chiffre du défi est toujours le bon, et dans le Défi du
+   vendredi c'est exactement la semaine qui court.
+   ON PREND LA VUE LA PLUS FRAÎCHE : `tournoi.vue` date du dernier affichage,
+   et /tournois vient de rendre le même tournoi six secondes plus tard.
+   PAS ENCORE INSCRIT DANS CE DÉFI : c'est zéro, et zéro est un chiffre. */
+function mesVictoiresIci(){
+  if (!(tournoi && tournoi.vue)) return null;
+  var vue = tournoi.vue, d = tousLesTournois || {};
+  var frais = [d.vendredi, d.collegues, d.fanmi];
+  for (var i = 0; i < frais.length; i++){
+    if (frais[i] && frais[i].code === vue.code){ vue = frais[i]; break; }
+  }
+  if (vue.maPlace < 0) return 0;
+  var cl = vue.classement || [];
+  for (var j = 0; j < cl.length; j++) if (cl[j].place === vue.maPlace) return cl[j].g || 0;
+  return 0;
 }
 
 /* ⚠️ « TOURNOI » ET « QUITTER LE TOURNOI » NE PARAISSENT JAMAIS ENSEMBLE
@@ -3785,7 +3800,6 @@ function rafraichirMonBilan(){
     .then(function(r){ return r.json(); })
     .then(function(d){
       tousLesTournois = d;
-      monBilan = maLigneDuClassement(d);
       direQuiJeSuis();
     }).catch(function(){});
 }
@@ -3829,9 +3843,10 @@ function direQuiJeSuis(){
   var html = '<span class="moi__nom">' + echapper(n) + "</span>";
   /* ⚠️ LE CHIFFRE S'AFFICHE MÊME À ZÉRO : c'est celui qu'on cherche à faire
      monter, et l'escamoter fait croire qu'il n'existe pas. */
-  if (monBilan){
-    html += ' <span class="moi__sep">·</span> <b>' + monBilan.v + "</b> " +
-            (monBilan.v > 1 ? "victoires" : "victoire");
+  var vIci = mesVictoiresIci();
+  if (vIci !== null){
+    html += ' <span class="moi__sep">·</span> <b>' + vIci + "</b> " +
+            (vIci > 1 ? "victoires" : "victoire");
   }
   /* ET OÙ JE SUIS. ⚠️ PLUS DE LIEN « QUITTER » ICI (Pierre, 11/09/2026 :
      « Défi du vendredi quitter et Quitter le tournoi c'est la même chose,
@@ -4042,9 +4057,11 @@ function armerLeSondage(){
 }
 
 /* ════════════════════════════ L'ACCUEIL ════════════════════════════════
-   Une seule requête rend le classement de tous les temps ET l'état des trois
-   tournois : la page s'affiche pleine dès la première seconde, au lieu de
-   trois secousses successives. */
+   Une seule requête rend l'état des trois tournois : la page s'affiche pleine
+   dès la première seconde, au lieu de trois secousses successives. Elle rend
+   aussi le classement de tous les temps, que la page n'affiche PLUS nulle part
+   depuis le 20/09/2026 : le chiffre sous le titre et les deux tableaux de
+   l'accueil comptent tous la semaine. */
 function chargerLesTournois(silencieux){
   if (!SERVEUR) return;
   var url = SERVEUR + "/tournois?jeton=" + encodeURIComponent(monJeton());
@@ -4052,7 +4069,6 @@ function chargerLesTournois(silencieux){
   if (mien) url += "&fanmi=" + encodeURIComponent(mien);
   fetch(url).then(function(r){ return r.json(); }).then(function(d){
     tousLesTournois = d;
-    monBilan = maLigneDuClassement(d);
     direQuiJeSuis();
     if (tournoi && tournoi.code){
       /* Un tournoi est ouvert à l'écran : on le rafraîchit avec ce que la
