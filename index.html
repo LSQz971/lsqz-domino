@@ -398,30 +398,105 @@ h1{
 }
 
 /* ───────────────────────────────────────────────────────── LA PIOCHE ──
-   Elle n'existe qu'en domino francais. Un petit tas de dos empiles, avec ce
-   qu'il en reste ecrit dessus : de loin on voit la pile baisser, comme sur
-   une vraie table. En chinois elle est simplement absente, puisque ce qui
-   reste de cote ne se touche jamais. */
+   Elle n'existe qu'en domino francais. UNE RANGEE de pieces face cachee,
+   posee en travers de la table au-dessus du jeu : on les voit toutes, tout
+   le temps, et la ligne raccourcit sous les yeux de tout le monde. En
+   chinois elle est simplement absente, puisque ce qui reste de cote ne se
+   touche jamais.
+
+   ⚠️ LA RANGEE GARDE SES TROUS. Une case piochee ne disparait pas et les
+   voisines ne se resserrent pas : le vide reste a sa place et montre ce qui
+   est deja parti. Mesure chez Ludicash le 20/09/2026, et c'est ce qui rend
+   la pioche lisible d'un coup d'oeil. */
+/* ⚠️ ELLE EST DANS L'AIRE DE JEU, AU-DESSUS DE LA CHAINE, et elle bouge avec
+   elle (Pierre, 20/09/2026 : « tu as vu une pioche plantée dans le décor de
+   Ludi ? »). Deux essais rates avant celui-la, et ils disent pourquoi :
+   posee dans le flux, elle tombait SOUS le joueur d'en face, sur son jeton et
+   ses dos ; clouee en haut du feutre avec un cadre et une legende, elle
+   devenait un bandeau d'interface plante au milieu du vide. Ce sont des
+   dominos poses sur une table : ils vivent donc au milieu du jeu, avec les
+   autres, sans boite autour. */
 .pioche{
-  position:absolute;right:8px;top:8px;z-index:3;
-  display:flex;flex-direction:column;align-items:center;gap:5px;
+  position:absolute;left:8px;right:8px;z-index:2;
+  display:flex;justify-content:center;
 }
-.pioche__tas{position:relative;width:30px;height:20px}
-.pioche__tas i{
-  position:absolute;left:0;width:26px;height:9px;border-radius:2px;
+/* ⚠️ LA RANGEE NE PASSE JAMAIS A LA LIGNE. A quatorze cases sur un telephone
+   elle debordait d'un cheveu et renvoyait la derniere piece seule sur une
+   deuxieme ligne : on croyait a une piece oubliee. Les cases se serrent donc
+   au lieu de se replier.
+   ⛔ PLUS DE PLATEAU D'ACCUEIL SOUS ELLE : ce fond sombre et ses coins ronds
+   en faisaient une boite d'interface. Des dominos poses sur un feutre n'ont
+   pas de boite. */
+.pioche__rangee{
+  display:flex;flex-wrap:nowrap;justify-content:center;gap:3px;max-width:100%;
+}
+/* Une case de la rangee : un domino debout, vu de dos, a la meme enseigne
+   que les pieces des adversaires (.dos), en plus haut parce qu'il est
+   debout et non couche. */
+.pioche__d{
+  width:18px;height:34px;border-radius:3px;flex:0 1 18px;min-width:9px;
   background:linear-gradient(168deg,#8C3A24 0%,#71291A 45%,#4E1B10 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,190,160,.34),
     inset 0 -1px 0 rgba(0,0,0,.45),
     0 1px 0 rgba(0,0,0,.30);
 }
-.pioche__tas i:nth-child(1){top:8px;left:0}
-.pioche__tas i:nth-child(2){top:4px;left:2px}
-.pioche__tas i:nth-child(3){top:0;left:4px}
-.pioche__n{
-  background:var(--bois);border:1px solid rgba(255,255,255,.24);
-  border-radius:9px;padding:0 6px;font-size:10px;font-weight:800;
-  color:var(--encre);line-height:16px;
+/* LE TROU. Il occupe exactement la place de la piece partie, sans quoi la
+   rangee se resserrerait et l'on perdrait l'information. */
+.pioche__d--trou{
+  background:none;box-shadow:none;
+  border:1px dashed rgba(255,255,255,.14);
+}
+/* CE QUI SE TOUCHE SE VOIT. La rangee ne s'allume que quand c'est a moi et
+   que je ne peux pas jouer : le reste du temps elle n'est qu'un decompte. */
+.pioche__rangee--actif .pioche__d{cursor:pointer}
+.pioche__d--actif{
+  outline:2px solid var(--or);outline-offset:1px;
+  animation:pioche-respire 1.6s ease-in-out infinite;
+}
+.pioche__d--actif:hover{transform:translateY(-3px)}
+@keyframes pioche-respire{ 50%{outline-color:rgba(255,214,102,.34)} }
+/* ⚠️ LA PIECE PIOCHEE TRAVERSE LA TABLE, ET TOUT LE MONDE LA VOIT PARTIR
+   (Pierre, 20/09/2026 : « je veux que tous les joueurs, ordi ou pas ordi,
+   jouent et piochent leurs propres dominos de maniere visible comme
+   ludicash »). Avant, l'ordinateur se servait pendant son temps de reflexion
+   et la case disparaissait d'un coup : on ne savait pas qui avait pioche, ni
+   meme qu'il y avait eu une pioche. Le domino part maintenant de SA case
+   dans la rangee et vole jusqu'a la place de celui qui l'a pris. */
+.pioche__vol{
+  position:fixed;z-index:60;border-radius:3px;pointer-events:none;
+  background:linear-gradient(168deg,#8C3A24 0%,#71291A 45%,#4E1B10 100%);
+  box-shadow:inset 0 1px 0 rgba(255,190,160,.34), 0 3px 8px rgba(0,0,0,.45);
+  transition:transform .42s cubic-bezier(.4,.1,.3,1), opacity .42s ease;
+}
+/* La case qui vient d'etre videe clignote une fois : le trou se remarque. */
+@keyframes pioche-trou-neuf{ from{background:rgba(255,214,102,.34)} }
+.pioche__d--neuf{animation:pioche-trou-neuf .6s ease}
+/* ⚠️ LA RANGEE PREND LE SENS DU JOUEUR QUI PIOCHE (Pierre, 20/09/2026 : « la
+   pioche perpendiculaire à la personne qui pioche ? »). Elle etait horizontale
+   partout, donc elle arrivait EN TRAVERS des joueurs de gauche et de droite,
+   qui tiennent leur jeu en colonne le long de leur bord. Devant eux, la pioche
+   devient donc une colonne, et ses dominos se couchent, exactement comme les
+   dos de leur main. En haut et en bas, elle reste une ligne de dominos debout,
+   comme leurs mains a eux. Une pioche se presente toujours dans le sens de
+   celui qui va la prendre. */
+.pioche--vertical{
+  left:auto;right:auto;top:50%;transform:translateY(-50%);
+  width:auto;
+}
+.pioche--vertical .pioche__rangee{flex-direction:column}
+.pioche--vertical .pioche__d{width:34px;height:18px;flex:0 1 18px;min-height:8px;min-width:0}
+/* ⚠️ ET LE DOMINO POSE TRAVERSE AUSSI LA TABLE (Pierre, 20/09/2026 : « je
+   veux que tous les joueurs, ordi ou pas ordi, JOUENT et piochent leurs
+   propres dominos de maniere visible »). Piocher a vue ne suffisait pas :
+   quand un joueur POSAIT, sa piece apparaissait d'un coup sur la chaine sans
+   qu'on la voie quitter sa main, et l'on ne savait pas d'ou venait le coup
+   ni qui venait de jouer. La piece part maintenant de la place de celui qui
+   joue et vient se ranger a sa position sur la chaine. */
+.pose__vol{
+  position:fixed !important;z-index:60;pointer-events:none;margin:0 !important;
+  box-shadow:0 8px 16px rgba(0,0,0,.5);
+  transition:transform .38s cubic-bezier(.3,.1,.3,1);
 }
 .pioche--vide{opacity:.34}
 
@@ -1043,11 +1118,6 @@ h1{
 }
 /* Le bilan de sortie : le chiffre des victoires se lit d'un coup d'œil,
    c'est lui qu'on est venu chercher. */
-.tournoi__lien{
-  font:inherit;font-size:12px;padding:0;border:0;background:none;cursor:pointer;
-  color:#ffd666;text-decoration:underline;text-transform:none;letter-spacing:normal;
-  box-shadow:none;font-weight:600;
-}
 .tournoi__bilan{font-size:14px;opacity:.95}
 .tournoi__bilan b{font-size:20px;font-weight:800;color:#ffd666}
 .tournoi__partager{
@@ -1087,7 +1157,7 @@ h1{
   background:rgba(255,214,102,.16);color:var(--encre);
   border-color:rgba(255,214,102,.5);
 }
-/* ═══ LE LIEN VERS LES SIX CLASSEMENTS, ET LEUR PANNEAU ═══════════════════
+/* ═══ LE LIEN VERS LES CLASSEMENTS, ET LEUR PANNEAU ══════════════════════
    Posé le 20/09/2026, le même jour qu'à Ti Point Ti Croix. Le lien se touche
    au doigt sur toute la largeur : un mot souligné au milieu d'un tableau se
    rate une fois sur deux sur un téléphone. */
@@ -1100,10 +1170,46 @@ h1{
   letter-spacing:0;text-transform:none;box-shadow:none;
 }
 .tournoi__lien span{font-size:19px;opacity:.7}
+/* ⚠️ CETTE SECONDE REGLE EST ECRITE APRES LA PREMIERE, ET C'EST VOULU : LES
+   DEUX SE COMPLETENT (Pierre, 20/09/2026 : « pour domino la même présentation
+   que Ti Point Ti Croix »). La regle du dessus donne la GEOMETRIE (pleine
+   largeur, le chevron pousse a droite, 46 px de haut, touchable au doigt),
+   celle-ci donne l'HABILLAGE (petit, or, souligne, sans cadre ni fond). C'est
+   exactement ce que rend Ti Point Ti Croix, ou elles sont dans cet ordre-la.
+   Au domino elles etaient dans l'ordre inverse : le gros bouton encadre
+   l'emportait, et les deux jeux ne se ressemblaient plus.
+   ⛔ NE PAS « NETTOYER » CE DOUBLON en supprimant l'une des deux : on perdrait
+   soit la largeur et le chevron, soit l'allure de lien. Si un jour il faut
+   n'en faire qu'une, il faut fusionner leurs declarations, pas en jeter une. */
+.tournoi__lien{
+  font:inherit;font-size:12px;padding:0;border:0;background:none;cursor:pointer;
+  color:#ffd666;text-decoration:underline;text-transform:none;letter-spacing:normal;
+  box-shadow:none;font-weight:600;
+}
 .tournoi__critere{margin:0 0 20px}
 .tournoi__critere h3{margin:0 0 2px}
 .tournoi__critere h4{margin:0 0 4px;font-size:13px;opacity:.8}
 .tournoi__critere .salon__note{margin:0 0 8px}
+/* ⛔ LA LEGENDE « N dominos a piocher » EST SUPPRIMEE (20/09/2026). Elle
+   annoncait la pioche comme une notice ; on compte les pieces, elles sont
+   toutes la. Le nombre reste dans le `title` et dans l'etiquette de lecture
+   d'ecran, pour qui en a besoin. */
+.pioche__mot{display:none}
+
+/* ⚠️ DANS CE PANNEAU, LES NOTES SE LISENT EN TEXTE NU, COMME À TI POINT TI
+   CROIX (Pierre, 20/09/2026 : « JE VEUX LA MEME PRESENTATION QUE POUR LE TI
+   POINT TI CROIX »). Au domino, `.salon__note` est un cadre, fond et bordure
+   compris ; à Ti Point Ti Croix c'est du texte gris. Le panneau empilait donc
+   ici un cadre sous le titre, puis un cadre au-dessus de chaque tableau, et
+   l'on ne lisait plus que des boîtes. L'écrasement ne vaut QUE dans
+   `#tr-classements` : partout ailleurs le cadre reste, l'accueil compris, que
+   Pierre a demandé de ne pas toucher. */
+#tr-classements .salon__note{
+  background:none;border:0;border-radius:0;padding:0;
+  font-size:12px;line-height:1.45;
+}
+#tr-classements > .salon__note{margin:6px 0 14px}
+#tr-classements .tournoi__critere .salon__note{margin:0 0 8px}
 /* LE PANNEAU ARRIVE DU CÔTÉ VERS LEQUEL ON VA. Seul celui qui ARRIVE est
    animé, celui qui part se retire aussitôt : les faire cohabiter obligerait
    la boîte à prendre la hauteur du plus grand des deux. */
@@ -1400,12 +1506,17 @@ h1{
       </div>
     </div>
 
-    <!-- LA PIOCHE, en domino francais seulement. Autour d'une vraie table la
-         pile est posee la, et tout le monde voit fondre : c'est une
-         information de jeu, pas une decoration. -->
+    <!-- LA PIOCHE SE COLLE SOUS LA MAIN DE L'ADVERSAIRE (Pierre, 20/09/2026 :
+         « la pioche qui est plantée au MILIEU »). Troisieme place, et la
+         bonne : chez Ludicash la rangee touche le jeu du joueur d'en face,
+         les deux ne font qu'un bloc de pieces cachees en haut de la table.
+         Les deux essais rates disent pourquoi : une bande a mi-hauteur du
+         feutre, ou pire, centree dans l'aire au-dessus de la chaine, flotte
+         au milieu du vert et se lit comme un objet pose sur le decor. C'est
+         `placerLaPioche()` qui la cale, en mesurant la place du haut : elle
+         suit donc la table, qu'il y ait un joueur en face ou non. -->
     <div class="pioche" id="pioche" hidden>
-      <div class="pioche__tas"><i></i><i></i><i></i></div>
-      <div class="pioche__n" id="pioche-n">0</div>
+      <div class="pioche__rangee" id="pioche-rangee" role="list" aria-label="La pioche"></div>
     </div>
 
     <div class="aire">
@@ -1559,9 +1670,9 @@ h1{
            quelqu'un a gagné : c'est ce couple-là qui donne envie de jouer
            aujourd'hui. C'est exactement le tableau de l'écran 2, remonté ici.
            Posé d'abord sur TI POINT TI CROIX, le même jour. -->
-      <!-- ⚠️ LE LIEN VERS LES SIX CLASSEMENTS (Pierre, 20/09/2026). L'accueil
+      <!-- ⚠️ LE LIEN VERS LES CLASSEMENTS (Pierre, 20/09/2026). L'accueil
            garde son tableau, celui de la semaine, qui est celui qu'on vient
-           lire tous les jours. Les six autres lectures du même jeu vivent une
+           lire tous les jours. Les autres lectures du même jeu vivent une
            porte plus loin. -->
       <button class="tournoi__lien" id="tr-cl-ouvrir" type="button">
         Les classements <span aria-hidden="true">›</span>
@@ -1579,16 +1690,20 @@ h1{
       </div>
     </div>
 
-    <!-- ══ ÉCRAN 4 : LES SIX CLASSEMENTS ═════════════════════════════════
-         Posé le 20/09/2026, le même jour qu'à Ti Point Ti Croix : trois façons
+    <!-- ══ ÉCRAN 4 : LES QUATRE CLASSEMENTS ══════════════════════════════
+         Posé le 20/09/2026, le même jour qu'à Ti Point Ti Croix : deux façons
          de gagner, et pour chacune la semaine qui court à côté du général. Le
-         même jeu se lit six fois, et chaque lecture met quelqu'un d'autre en
-         tête : c'est ce qui fait revenir celui qui ne sera jamais premier au
-         nombre de victoires. -->
+         même jeu se lit quatre fois, et chaque lecture met quelqu'un d'autre
+         en tête : c'est ce qui fait revenir celui qui ne sera jamais premier
+         au nombre de victoires.
+         ⛔ LE TROISIÈME CRITÈRE, « Le moins de points pour gagner », EST
+         SUPPRIMÉ le jour même (Pierre : « c'est inutile à savoir dans le jeu
+         de domino »). Ti Point Ti Croix garde le sien, les coups, qui lui dit
+         quelque chose. -->
     <div id="tr-classements" hidden>
       <button class="tournoi__retour" id="tr-cl-retour" type="button"><span>‹</span> Revenir aux tournois</button>
       <h2>Les classements</h2>
-      <p class="salon__note">Trois façons de gagner. Pour chacune, la semaine qui court
+      <p class="salon__note">Deux façons de gagner. Pour chacune, la semaine qui court
         et le général.</p>
       <div id="tr-cl-listes"></div>
     </div>
@@ -1844,11 +1959,34 @@ function melanger(t, hasard){
 /* La donne : sept pieces par joueur, et ce qui reste va de cote. A deux il
    reste quatorze pieces, a trois sept, a quatre plus rien : les vingt-huit
    sont en main, et c'est ce qui rend la table a quatre si serree. */
-function distribuer(hasard, joueurs){
+/* ⚠️ LA DONNE N'EST PAS LA MEME EN FRANCAIS ET EN CHINOIS (Pierre,
+   20/09/2026 : « la règle française ! »). En chinois, c'est la regle du pays
+   qu'il a fixee le 28/08 : SEPT pieces chacun, quel que soit le nombre de
+   joueurs, et ce qui reste est mis de cote sans jamais se piocher. En
+   francais, la donne laisse un talon, et elle change avec le nombre :
+
+     2 joueurs  7 chacun  ->  14 au talon   (le compte de Ludicash, mesure)
+     3 joueurs  6 chacun  ->  10 au talon
+     4 joueurs  6 chacun  ->   4 au talon
+
+   Source : Le Mag Loisirs, lue le 20/09/2026, https://www.lemagloisirs.fr/regle-domino/
+   « À 2 joueurs : 7 dominos chacun. À 3 ou 4 joueurs : 6 dominos chacun. »
+   ⚠️ Wikipedia ne donne AUCUN chiffre, elle ecrit seulement « le meme nombre
+   a chaque joueur, en laissant un talon de quelques pieces » : ne pas la
+   citer comme source de ces nombres.
+   Ce qui se jouait avant : sept partout, donc ZERO piece au talon a quatre,
+   et une option « avec la pioche » qui ne changeait rien a cette table. */
+function partParJoueur(joueurs, variante){
+  if (variante !== "pioche") return 7;
+  return (joueurs === 2) ? 7 : 6;
+}
+
+function distribuer(hasard, joueurs, parJoueur){
   var n = joueurs || 3;
+  var k = parJoueur || 7;
   var t = melanger(jeuComplet(), hasard), mains = [];
-  for (var j = 0; j < n; j++) mains.push(t.slice(j * 7, j * 7 + 7));
-  return { mains: mains, talon: t.slice(n * 7, 28) };
+  for (var j = 0; j < n; j++) mains.push(t.slice(j * k, j * k + k));
+  return { mains: mains, talon: t.slice(n * k, 28) };
 }
 
 /* Qui engage : le plus fort double, a defaut la piece la plus lourde.
@@ -2173,7 +2311,8 @@ function nouvellePartie(options){
   var o = options || {};
   var hasard = o.hasard;
   var N = o.joueurs || 3;
-  var donne = distribuer(hasard, N);
+  var variante = o.variante || "chinois";
+  var donne = distribuer(hasard, N, partParJoueur(N, variante));
   var eng = quiEngage(donne.mains);
   var p = {
     joueurs: N,
@@ -2183,9 +2322,18 @@ function nouvellePartie(options){
     equipes: (N === 4),
     mains: donne.mains,
     talon: donne.talon,
+    /* LA PIOCHE SE MONTRE EN RANGEE, ET LA RANGEE GARDE SES TROUS (Pierre,
+       20/09/2026, apres releve d'une partie chez Ludicash : on y prend la
+       piece qu'on veut, au milieu de la ligne, et les autres ne se
+       resserrent pas). `talonTaille` est le nombre de cases de la rangee,
+       fixe pour toute la donne ; `talonRang` dit, pour chaque piece encore
+       la, de quelle case elle vient. Une case absente de talonRang est un
+       trou : quelqu'un y a pioche. */
+    talonTaille: donne.talon.length,
+    talonRang: donne.talon.map(function(_, i){ return i; }),
     plateau: plateauVide(),
     tour: eng.joueur,
-    variante: o.variante || "chinois",
+    variante: variante,
     niveau: o.niveau || "moyenne",
     niveaux: o.niveaux || null,          /* un niveau par joueur, sinon le meme pour tous */
     memoire: memoireNeuve(N),
@@ -2243,12 +2391,29 @@ function bouder(p){
 }
 
 /* La pioche n'existe QUE dans la variante francaise. En chinois, ce qui
-   reste de cote ne se touche jamais. */
-function piocher(p){
+   reste de cote ne se touche jamais.
+
+   ON PIOCHE UNE CASE PRECISE DE LA RANGEE, pas le dessus d'un tas : c'est
+   toute la difference relevee chez Ludicash le 20/09/2026, et c'est ce que
+   Pierre a demande (« je veux pouvoir choisir mes dominos »). L'indice `i`
+   est la position dans `p.talon`, celle que l'interface trouve avec
+   `p.talonRang.indexOf(case)`. */
+function piocherIndex(p, i){
   if (p.variante !== "pioche" || !p.talon.length) return null;
-  var piece = p.talon.pop();
+  if (typeof i !== "number" || i < 0 || i >= p.talon.length) i = p.talon.length - 1;
+  var piece = p.talon.splice(i, 1)[0];
+  if (p.talonRang) p.talonRang.splice(i, 1);
   p.mains[p.tour].push(piece);
   return piece;
+}
+
+/* L'ORDINATEUR PIOCHE AU HASARD DANS LA RANGEE, comme un joueur devant des
+   pieces face cachee : il n'a aucune raison de prendre toujours le meme
+   bout, et une rangee qui se viderait toujours par la droite se verrait. */
+function piocher(p){
+  if (p.variante !== "pioche" || !p.talon.length) return null;
+  var h = p.hasard || Math.random;
+  return piocherIndex(p, Math.floor(h() * p.talon.length));
 }
 
 /* Le tour d'un joueur qui ne peut pas jouer : il pioche tant qu'il le peut
@@ -2330,7 +2495,8 @@ function jouerOrdinateur(p){
    donc qu'une seule regle du jeu dans ce fichier, pas deux. */
 var MOTEUR = {
   jeuComplet: jeuComplet, points: points, estDouble: estDouble, pointsMain: pointsMain,
-  memePiece: memePiece, melanger: melanger, distribuer: distribuer, quiEngage: quiEngage,
+  memePiece: memePiece, melanger: melanger, distribuer: distribuer,
+  partParJoueur: partParJoueur, quiEngage: quiEngage,
   plateauVide: plateauVide, boutGauche: boutGauche, boutDroite: boutDroite,
   coupsPossibles: coupsPossibles, coupsAutorises: coupsAutorises,
   orienter: orienter, poser: poser, boutsApres: boutsApres,
@@ -2340,7 +2506,8 @@ var MOTEUR = {
   piecesInvisibles: piecesInvisibles, tirerMonde: tirerMonde, simulerFin: simulerFin,
   coupMoyen: coupMoyen, coupDifficile: coupDifficile,
   nouvellePartie: nouvellePartie, jouerEngagement: jouerEngagement, jouerCoup: jouerCoup,
-  bouder: bouder, piocher: piocher, resoudreBlocage: resoudreBlocage, terminer: terminer,
+  bouder: bouder, piocher: piocher, piocherIndex: piocherIndex,
+  resoudreBlocage: resoudreBlocage, terminer: terminer,
   jouerOrdinateur: jouerOrdinateur, NOMS: NOMS, INITIALES: INITIALES
 };
 if (typeof window !== "undefined") window.MOTEUR = MOTEUR;
@@ -2443,6 +2610,20 @@ Table.prototype.expirer = function(maintenant){
     MOTEUR.jouerCoup(this.partie, c.i, c.cote);
     this.dire(this.nomDe(siege) + " a laissé filer le temps : le " +
               piece[0] + "-" + piece[1] + " est parti tout seul.");
+  } else if (this.variante === "pioche" && this.partie.talon && this.partie.talon.length){
+    /* BLOQUE, AVEC DE QUOI PIOCHER : on pioche pour lui plutot que de le faire
+       bouder a tort. `resoudreBlocage` tire jusqu'a ce qu'il puisse jouer, ou
+       boude de lui-meme si le talon s'epuise sans le debloquer. */
+    var etat = MOTEUR.resoudreBlocage(this.partie);
+    this.dire(this.nomDe(siege) + " a laissé filer le temps : la table a pioché pour lui.");
+    if (etat !== "boude"){
+      var cc = MOTEUR.coupsAutorises(this.partie.mains[siege], this.partie.plateau,
+                                     this.aEngager());
+      if (cc.length){
+        var c2 = cc[Math.floor(this.hasard() * cc.length)];
+        MOTEUR.jouerCoup(this.partie, c2.i, c2.cote);
+      }
+    }
   } else {
     MOTEUR.bouder(this.partie);
     this.dire(this.nomDe(siege) + " a laissé filer le temps, et il boudait de toute façon.");
@@ -2593,9 +2774,45 @@ Table.prototype.jouer = function(siege, indice, cote){
   return { ok: true };
 };
 
+/* ⚠️ L'ARBITRE SAIT PIOCHER DEPUIS LE 20/09/2026 (Pierre : « tu fais la meme
+   chose partout dans le jeu de domino, tournois y compris »). Avant, il ne
+   piochait JAMAIS pour un joueur humain : en domino francais, un joueur
+   bloque avec quatorze pieces au talon boudait quand meme, et la variante ne
+   fonctionnait tout simplement pas en ligne. Les sieges tenus par
+   l'ordinateur, eux, piochaient depuis toujours, par `jouerOrdinateur`.
+   ON PIOCHE UNE CASE PRECISE, comme a la table locale : le joueur designe le
+   domino qu'il veut dans la rangee face cachee. Piocher NE PASSE PAS le tour,
+   on reste a lui tant qu'il n'a pas joue ou boude. */
+Table.prototype.piocher = function(siege, caseVoulue){
+  if (!this.partie || this.partie.fini) return { erreur: "aucune donne en cours" };
+  if (this.partie.tour !== siege) return { erreur: "ce n'est pas ton tour" };
+  if (this.variante !== "pioche") return { erreur: "il n'y a pas de pioche à cette table" };
+  if (!this.partie.talon || !this.partie.talon.length) return { erreur: "la pioche est vide" };
+  if (MOTEUR.coupsAutorises(this.partie.mains[siege], this.partie.plateau,
+                            this.aEngager()).length){
+    return { erreur: "tu peux jouer, tu ne piocheras pas" };
+  }
+  var rangs = this.partie.talonRang || [];
+  var i = rangs.indexOf(caseVoulue);
+  if (i < 0) i = this.partie.talon.length - 1;    /* case inconnue : la derniere */
+  var piece = MOTEUR.piocherIndex(this.partie, i);
+  if (!piece) return { erreur: "ce coup est refusé" };
+  this.sieges[siege].retards = 0;
+  /* ⛔ LA PIECE PIOCHEE NE SE DIT PAS A LA TABLE : ce serait donner a tout le
+     monde un domino de la main de celui qui pioche. On annonce le geste, pas
+     le contenu, exactement comme autour d'une vraie table. */
+  this.dire(this.nomDe(siege) + " pioche.");
+  return { ok: true };
+};
+
 Table.prototype.bouder = function(siege){
   if (!this.partie || this.partie.fini) return { erreur: "aucune donne en cours" };
   if (this.partie.tour !== siege) return { erreur: "ce n'est pas ton tour" };
+  /* ⚠️ ON NE BOUDE PAS TANT QU'IL RESTE A PIOCHER. En domino francais, la
+     pioche est obligatoire avant de passer son tour. */
+  if (this.variante === "pioche" && this.partie.talon && this.partie.talon.length){
+    return { erreur: "pioche d'abord, tu ne peux pas bouder" };
+  }
   if (!MOTEUR.bouder(this.partie)) return { erreur: "tu peux jouer, tu ne peux pas bouder" };
   this.dire(this.nomDe(siege) + " boude.");
   this.apresCoup();
@@ -2750,6 +2967,12 @@ Table.prototype.etatPour = function(siege){
   vue.aMoi = (this.partie.tour === siege) && !this.partie.fini;
   vue.fini = this.partie.fini;
   vue.talon = (this.variante === "pioche") ? this.partie.talon.length : 0;
+  /* ⚠️ LES CASES DE LA RANGEE, PAS SEULEMENT LEUR NOMBRE. Sans elles, l'ecran
+     ne peut ni montrer les trous ni laisser designer une piece : il n'aurait
+     qu'un compteur. On n'envoie que des NUMEROS DE CASE, jamais les pieces :
+     le talon reste secret. */
+  vue.talonTaille = (this.variante === "pioche") ? (this.partie.talonTaille || 0) : 0;
+  vue.talonRang = (this.variante === "pioche") ? (this.partie.talonRang || []).slice() : [];
 
   /* LA PIECE QUI ENGAGE NE SE DIT QU'A CELUI QUI LA TIENT. Elle est encore
      dans une main cachee : l'envoyer a toute la table donnerait a chacun un
@@ -3339,6 +3562,11 @@ function afficherVue(vue){
     plateau: vue.plateau || MOTEUR.plateauVide(),
     mains: mains,
     talon: new Array(vue.talon || 0),
+    /* LES CASES DE LA RANGEE, envoyees par l'arbitre depuis le 20/09/2026 :
+       c'est ce qui permet a l'ecran de montrer les trous et de laisser
+       designer une piece. Ce ne sont que des numeros, le talon reste secret. */
+    talonTaille: vue.talonTaille || 0,
+    talonRang: vue.talonRang || null,
     tour: vue.tour,
     fini: !!vue.fini,
     resultat: vue.resultat || null,
@@ -4135,7 +4363,7 @@ function chargerLesTournois(silencieux){
        remplit le nom de son tournoi an fanmi doit pouvoir prendre son temps :
        il se faisait renvoyer à l'accueil au bout de six secondes. */
     if (ecran === "neuf") return;
-    /* ⚠️ NI CELUI QUI LIT LES SIX CLASSEMENTS : on lui redessine ses tableaux
+    /* ⚠️ NI CELUI QUI LIT LES CLASSEMENTS : on lui redessine ses tableaux
        avec les chiffres neufs, et on le laisse où il est. */
     if (ecran === "classements"){ dessinerLesClassements(); return; }
     montrerLAccueil();
@@ -4257,54 +4485,30 @@ function dessinerLeClassementGeneral(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   LES SIX CLASSEMENTS
+   LES QUATRE CLASSEMENTS
    Posés le 20/09/2026, le même jour qu'à Ti Point Ti Croix et sur la même
-   commande de Pierre. Le même jeu s'y lit de trois façons, chacune sur deux
-   durées : la semaine qui court, et le général. Six tableaux, donc six têtes
-   de classement possibles, et c'est le but : celui qui ne sera jamais premier
-   au nombre de victoires peut être premier au rendement ou à la netteté de
-   ses victoires, et il revient pour ça.
+   commande de Pierre. Le même jeu s'y lit de deux façons, chacune sur deux
+   durées : la semaine qui court, et le général. Quatre tableaux, donc quatre
+   têtes de classement possibles, et c'est le but : celui qui ne sera jamais
+   premier au nombre de victoires peut être premier au rendement, et il
+   revient pour ça.
 
      LE PLUS DE VICTOIRES              le compte brut, celui de l'accueil.
      LE MOINS DE PARTIES POUR GAGNER   gagner le plus en jouant le moins.
-     LE MOINS DE POINTS POUR GAGNER    la moyenne de points restés en main.
 
-   ⚠️ AU DOMINO, LE TROISIÈME COMPTE LES POINTS EN MAIN, LÀ OÙ TI POINT TI
-   CROIX COMPTE LES COUPS. C'est la même idée dans l'unité du jeu : ce que la
-   victoire a coûté. Zéro est la meilleure valeur, c'est la victoire parfaite,
-   celle où l'on pose son dernier domino sans rien garder.
-
-   ⚠️ LE SEUIL EST CELUI DE LA NBA (Pierre, 20/09/2026 : « ok pr le seuil comme
-   la NBA »). Le fait qui a tranché, relevé sur nba.com le même jour : sans
-   minimum, le classement des tirs à 3 points par réussite met quatre pivots en
-   tête, dont un à 3 sur 3, devant tous les tireurs de la ligue. La NBA exige
-   82 paniers à 3 points pour être classé au pourcentage. Cinq victoires jouent
-   ici le même rôle, et ce seuil ne s'écrit nulle part à l'écran.
+   ⛔ IL Y AVAIT UN TROISIÈME TABLEAU, « LE MOINS DE POINTS POUR GAGNER », ET
+   IL EST SUPPRIMÉ (Pierre, 20/09/2026 : « tu supprimes ! c'est inutile à
+   savoir dans le jeu de domino »). Il donnait la moyenne de points restés en
+   main par victoire, calquée sur les coups de Ti Point Ti Croix, où ce chiffre
+   dit quelque chose. Au domino il ne dit rien au joueur : on ne joue pas pour
+   garder peu de points, on joue pour poser son dernier domino. Ne pas le
+   remettre. Ce qu'il emporte avec lui, s'il fallait un jour le rouvrir : le
+   seuil calculé à la manière de la NBA, 5 % des victoires du meneur avec un
+   plancher de trois, qui vit encore dans Ti Point Ti Croix et dans
+   `sources/_6tournoi_avant_classements_20260920.js`.
    ═══════════════════════════════════════════════════════════════════════ */
 
 var TR_MINI_PARTIES = 1;      /* on entre dès la première partie */
-
-/* ⚠️ LE SEUIL SE CALCULE, IL N'EST PAS ÉCRIT EN DUR (Pierre, 20/09/2026 :
-   « il faut que tout ça reste dynamique donc adaptable »). C'est la NBA qui
-   donne le principe : elle demande 82 paniers à 3 points sur une saison de 82
-   matchs, autrement dit un minimum CALÉ SUR LA TAILLE DE LA COMPÉTITION, pas
-   un nombre tombé du ciel. Un seuil fixe se périme des deux côtés à la fois :
-   cinq victoires n'écartaient personne à Ti Point Ti Croix, où l'on en compte
-   257, et retiraient deux joueurs sur cinq au domino, qui en est à 16.
-
-   LA RÈGLE : 5 % des victoires du meneur de CE tableau-là, jamais moins de
-   trois. Elle se recalcule à chaque affichage, séparément pour la semaine et
-   pour le général, et elle suit donc le jeu à mesure qu'il grandit.
-   Les deux réglages ci-dessous sont les seuls chiffres à toucher si le curseur
-   doit bouger un jour. */
-var TR_SEUIL_PART = 0.05;     /* la part des victoires du meneur */
-var TR_SEUIL_PLANCHER = 3;    /* et le plancher, quoi qu'il arrive */
-
-function seuilDesVictoires(lignes){
-  var max = 0;
-  for (var i = 0; i < lignes.length; i++) if ((lignes[i].v || 0) > max) max = lignes[i].v;
-  return Math.max(TR_SEUIL_PLANCHER, Math.round(max * TR_SEUIL_PART));
-}
 
 var TR_CL_CRITERES = [
   { cle: "victoires", titre: "Le plus de victoires",
@@ -4312,21 +4516,18 @@ var TR_CL_CRITERES = [
     vide: "Le premier nom de ce tableau est encore à écrire." },
   { cle: "parties", titre: "Le moins de parties pour gagner",
     quoi: "La part de parties gagnées.",
-    vide: "Le premier nom de ce tableau est encore à écrire." },
-  { cle: "points", titre: "Le moins de points pour gagner",
-    quoi: "La moyenne de points restés en main.",
     vide: "Le premier nom de ce tableau est encore à écrire." }
 ];
 
 /* LES DEUX SOURCES, RAMENÉES À LA MÊME FORME. Le tournoi dit `g` et le
-   classement de tous les temps dit `v` ; ils parlent tous deux de victoires. */
+   classement de tous les temps dit `v` ; ils parlent tous deux de victoires.
+   Les points en main ne sont plus lus ici depuis le 20/09/2026 : le tableau
+   qui les affichait est supprimé. */
 function lignesDeLaSemaine(){
   var vue = (tousLesTournois || {}).vendredi, cl = (vue && vue.classement) || [], l = [];
   for (var i = 0; i < cl.length; i++){
     var x = cl[i];
-    /* AU DÉFI DU VENDREDI, TOUTES LES VICTOIRES PORTENT LEURS POINTS : on y
-       joue seul contre l'ordinateur, et le tournoi les compte. */
-    l.push({ nom: x.nom, v: x.g || 0, j: x.j || 0, points: x.points || 0, vPoints: x.g || 0,
+    l.push({ nom: x.nom, v: x.g || 0, j: x.j || 0,
              moi: !!(vue && x.place === vue.maPlace) });
   }
   return l;
@@ -4336,27 +4537,21 @@ function lignesDeToujours(){
   var c = (tousLesTournois || {}).classement, cl = (c && c.lignes) || [], l = [];
   for (var i = 0; i < cl.length; i++){
     var x = cl[i];
-    /* AU GÉNÉRAL, `cv` COMPTE LES SEULES VICTOIRES DONT ON CONNAÎT LES POINTS :
-       un match an fanmi se joue entre deux personnes et n'en rapporte pas. */
-    l.push({ nom: x.nom, v: x.v || 0, j: x.j || 0, points: x.c || 0, vPoints: x.cv || 0,
-             moi: !!x.moi });
+    l.push({ nom: x.nom, v: x.v || 0, j: x.j || 0, moi: !!x.moi });
   }
   return l;
 }
 
 /* L'ORDRE D'UN TABLEAU, ET SES DÉPARTAGES. On recopie chaque ligne retenue :
-   les trois tableaux partent des mêmes objets, et poser un rang dans l'un
-   irait écrire dans les deux autres. */
+   les deux tableaux partent des mêmes objets, et poser un rang dans l'un
+   irait écrire dans l'autre. */
 function classerPar(critere, lignes){
   var l = [], i, x;
-  /* LE SEUIL DE CE TABLEAU, calculé sur ses propres lignes. */
-  var seuil = seuilDesVictoires(lignes);
   for (i = 0; i < lignes.length; i++){
     x = lignes[i];
     if (critere === "victoires"){ if (x.v <= 0) continue; }
-    else if (critere === "parties"){ if (x.j < TR_MINI_PARTIES || x.v <= 0) continue; }
-    else { if ((x.vPoints || 0) < seuil) continue; }
-    l.push({ nom: x.nom, v: x.v, j: x.j, points: x.points, vPoints: x.vPoints || 0, moi: x.moi });
+    else { if (x.j < TR_MINI_PARTIES || x.v <= 0) continue; }
+    l.push({ nom: x.nom, v: x.v, j: x.j, moi: x.moi });
   }
   if (critere === "victoires"){
     l.sort(function(a, b){
@@ -4364,22 +4559,11 @@ function classerPar(critere, lignes){
       if (a.j !== b.j) return a.j - b.j;     /* à victoires égales, celui qui a joué le moins */
       return a.nom.localeCompare(b.nom);
     });
-  } else if (critere === "parties"){
+  } else {
     l.sort(function(a, b){
       var A = a.v / a.j, B = b.v / b.j;
       if (B !== A) return B - A;
       if (b.v !== a.v) return b.v - a.v;      /* à part égale, celui qui a gagné le plus */
-      return a.nom.localeCompare(b.nom);
-    });
-  } else {
-    /* ⚠️ UNE MOYENNE DE POINTS, JAMAIS UN POURCENTAGE (Pierre, 20/09/2026 :
-       « pas en pourcentage ! NON ! en nombre de coups ! OUI ! », dit pour les
-       coups de Ti Point Ti Croix et valable ici). Le plus bas mène le tableau,
-       et le titre l'annonce : le MOINS de points pour gagner. */
-    l.sort(function(a, b){
-      var A = a.points / a.vPoints, B = b.points / b.vPoints;
-      if (A !== B) return A - B;
-      if (b.vPoints !== a.vPoints) return b.vPoints - a.vPoints;
       return a.nom.localeCompare(b.nom);
     });
   }
@@ -4399,18 +4583,11 @@ function htmlUnClassement(critere, lignes, vide){
       gros = String(x.v);
       petit = x.v > 1 ? "victoires" : "victoire";
       sous = x.j + (x.j > 1 ? " parties jouées" : " partie jouée");
-    } else if (critere === "parties"){
+    } else {
       gros = Math.round(x.v * 100 / x.j) + " %";
       petit = "gagnées";
       sous = x.v + (x.v > 1 ? " victoires" : " victoire") + " sur " + x.j +
              (x.j > 1 ? " parties" : " partie");
-    } else {
-      /* Une décimale, et la virgule française : sans elle, deux joueurs que
-         tout sépare affichent le même entier dans deux rangs différents. */
-      gros = (Math.round(x.points * 10 / x.vPoints) / 10).toFixed(1).replace(".", ",");
-      petit = "points par victoire";
-      sous = x.vPoints + (x.vPoints > 1 ? " victoires" : " victoire") +
-             " en gardant " + x.points + (x.points > 1 ? " points" : " point");
     }
     html += '<div class="tournoi__rang' + (x.moi ? " tournoi__rang--moi" : "") + '">' +
       '<span class="tournoi__place">' + x.rang + "</span>" +
@@ -4423,7 +4600,7 @@ function htmlUnClassement(critere, lignes, vide){
   return html;
 }
 
-/* LES SIX TABLEAUX, TROIS SECTIONS DE DEUX COLONNES. Sous 560 px les deux
+/* LES QUATRE TABLEAUX, DEUX SECTIONS DE DEUX COLONNES. Sous 560 px les deux
    colonnes s'empilent, la semaine qui court en premier. */
 function dessinerLesClassements(){
   var bac = $("#tr-cl-listes");
@@ -5515,6 +5692,10 @@ function reglerLAire(){
     else if (cotes[i][0] === "haut")   marge.haut   = Math.max(marge.haut,   r.bottom - boite.top + 6);
     else                                marge.bas    = Math.max(marge.bas,    boite.bottom - r.top + 6);
   }
+  /* ⛔ LA PIOCHE NE DEPLACE PLUS LA CHAINE. Elle change de place a chaque
+     pioche, selon qui pioche : la faire compter comme une place faisait
+     sauter toute la table a chaque fois. Elle passe au-dessus, le temps du
+     geste, et la table reste immobile. */
   /* la main s'etale en bas : elle compte comme une place */
   var main = $("#main");
   if (main){
@@ -5762,20 +5943,302 @@ function majTitre(joueurs, variante){
     ". Trois parties gagnées d'affilée pour mettre cochon. ";
 }
 
-/* LA PIOCHE, en domino francais. Le serveur envoie deja son compte dans
-   vue.talon et la partie locale le tient dans partie.talon : personne ne
-   l'affichait, et le joueur pouvait donc piocher sans jamais savoir combien
-   il restait. */
+/* ⛔ LA RANGEE NE PARAIT QUE PENDANT QU'ON PIOCHE, ET C'EST CE QUE FAIT
+   LUDICASH (verifie le 20/09/2026 dans le releve de la partie de Pierre, et
+   contre ce que j'avais affirme). Dans ce releve, la ligne des pieces cachees
+   tombe a zero puis reparait plusieurs fois dans la meme donne : a 13 s elle
+   est la, a 13,2 s elle a disparu, a 15,6 s elle revient a treize pieces, a
+   20,4 s elle repart. J'avais pris ces zeros pour du bruit d'animation et
+   j'en avais conclu qu'elle restait posee tout le long : faux. Elle s'ouvre
+   quand quelqu'un doit piocher et se referme des qu'il a fini.
+   C'est aussi ce qui reglait le vrai defaut : sur notre table, bien plus vide
+   que la leur, quatorze dos rouges affiches en permanence se lisaient comme
+   une barre plantee dans le decor.
+   Ce drapeau tient les pioches de l'ordinateur le temps du vol : sans lui, la
+   rangee dont la piece s'envole disparaitrait sous elle. */
+var piocheOuverte = false;
+/* QUI PIOCHE EN CE MOMENT : c'est lui qui decide OU la rangee se pose. */
+var piocheur = -1;
+
+/* ⚠️ LA RANGEE S'OUVRE A COTE DE CELUI QUI PIOCHE, ET NULLE PART AILLEURS
+   (Pierre, 20/09/2026 : « sur Ludi la pioche est à 500 000 km de celui qui
+   pioche comme en pj ? »). Il jouait en bas, la rangee s'ouvrait tout en haut
+   de la table : il devait traverser le tapis pour prendre une piece, et rien
+   ne disait que cette pioche etait la SIENNE. C'est la quatrieme place que
+   j'essaie, et les trois autres rataient toutes la meme chose : une pioche
+   n'a pas d'adresse fixe, elle se pose devant le joueur qui la fait.
+     BAS      juste au-dessus de sa main
+     HAUT     juste sous la place d'en face
+     GAUCHE   au ras de son bord, a sa hauteur
+     DROITE   pareil, de l'autre cote
+   Elle passe au-dessus de la chaine (plan 4) : elle ne dure qu'un instant, et
+   deplacer tout le jeu pour elle ferait sauter la table a chaque pioche. */
+function placerLaPioche(){
+  var pio = $("#pioche"), tapis = $(".tapis");
+  if (!pio || pio.hidden || !tapis) return;
+  var boite = tapis.getBoundingClientRect();
+  var nom = (piocheur >= 0) ? siegeDe(piocheur) : "haut";
+
+  var deCote = (nom === "gauche" || nom === "droite");
+  pio.classList.toggle("pioche--vertical", deCote);
+  pio.style.left = ""; pio.style.right = ""; pio.style.top = ""; pio.style.bottom = "";
+  pio.style.justifyContent = "center";
+
+  /* SUR LE COTE : une COLONNE collee au bord du joueur, ses dominos couches
+     comme les dos de sa main. C'est la mise en travers qui etait fausse. */
+  if (deCote){
+    var el = $("#siege-" + nom);
+    var r = (el && !el.hidden) ? el.getBoundingClientRect() : null;
+    var bord = r && r.width
+      ? (nom === "gauche" ? Math.round(r.right - boite.left + 10)
+                          : Math.round(boite.right - r.left + 10))
+      : 64;
+    if (nom === "gauche") pio.style.left = bord + "px"; else pio.style.right = bord + "px";
+    return;
+  }
+
+  pio.style.left = "8px"; pio.style.right = "8px";
+  if (nom === "bas"){
+    var main = $("#main");
+    var h = main ? main.getBoundingClientRect() : null;
+    pio.style.bottom = Math.round(h && h.height
+      ? (boite.bottom - h.top + 8) : 96) + "px";
+    return;
+  }
+  var enFace = $("#siege-haut");
+  var rh = (enFace && !enFace.hidden) ? enFace.getBoundingClientRect() : null;
+  pio.style.top = Math.round(rh && rh.height ? (rh.bottom - boite.top + 8) : 10) + "px";
+}
+
+/* EST-CE QUE C'EST A MOI DE PIOCHER, LA, MAINTENANT. Vrai seulement a la
+   table locale : en ligne, c'est l'arbitre qui mene la donne, et il ne sait
+   pas encore piocher (voir la note de dessinerPioche). */
+function doitPiocher(){
+  if (!partie || partie.fini) return false;
+  if (partie.variante !== "pioche") return false;
+  if (partie.tour !== monSiege() || occupe) return false;
+  if (!partie.talon || !partie.talon.length) return false;
+  /* EN LIGNE AUSSI DEPUIS LE 20/09/2026 : l'arbitre sait piocher, la rangee
+     se touche donc aux tables an fanmi comme a la table locale. Lien coupe,
+     on ne propose rien : le message partirait dans le vide. */
+  if (enLigne() && !lienVivant()) return false;
+  return MOTEUR.coupsPossibles(partie.mains[monSiege()], partie.plateau).length === 0;
+}
+
+/* LA PIOCHE, en domino francais : UNE RANGEE de pieces face cachee, et l'on
+   DESIGNE celle qu'on prend (Pierre, 20/09/2026). La rangee garde ses trous,
+   donc on la dessine sur `talonTaille` cases et l'on remplit celles que
+   `talonRang` dit encore presentes.
+   EN LIGNE COMME EN LOCAL : l'arbitre envoie `talonTaille` et `talonRang`
+   depuis le 20/09/2026, la rangee montre donc ses vrais trous et se touche
+   aux tables an fanmi aussi. */
 function dessinerPioche(){
   var e = $("#pioche");
   if (!e) return;
+  /* EN LIGNE, C'EST L'ARBITRE QUI FAIT FOI : des que sa reponse me rend un
+     coup jouable, ou une pioche vide, le geste est fini et la rangee se
+     referme. En local, c'est `piocherLaCase` qui la ferme. */
+  if (enLigne() && piocheOuverte && partie && !partie.fini &&
+      (!partie.talon || !partie.talon.length ||
+       MOTEUR.coupsPossibles(partie.mains[monSiege()], partie.plateau).length)){
+    piocheOuverte = false;
+  }
   var avecPioche = (partie.variante === "pioche");
-  e.hidden = !avecPioche;
-  if (!avecPioche) return;
-  var n = partie.talon ? partie.talon.length : 0;
-  $("#pioche-n").textContent = n;
-  e.classList.toggle("pioche--vide", n === 0);
-  e.setAttribute("title", n ? (n + " dominos à piocher") : "La pioche est vide");
+  var taille = partie.talonTaille || (partie.talon ? partie.talon.length : 0);
+  e.hidden = !avecPioche || !taille || !(doitPiocher() || piocheOuverte);
+  if (e.hidden) return;
+
+  var rangs = partie.talonRang || null, reste, present = {};
+  if (rangs){
+    reste = rangs.length;
+    for (var k = 0; k < rangs.length; k++) present[rangs[k]] = true;
+  } else {
+    /* En ligne : pas de cases, on remplit par la gauche. */
+    reste = partie.talon ? partie.talon.length : 0;
+    for (var q = 0; q < reste; q++) present[q] = true;
+  }
+
+  var actif = doitPiocher(), html = "";
+  if (actif) piocheur = monSiege();
+  for (var i = 0; i < taille; i++){
+    if (present[i]){
+      html += '<span class="pioche__d' + (actif ? " pioche__d--actif" : "") +
+        '" data-s="' + i + '" role="listitem" aria-label="Piocher ce domino"></span>';
+    } else {
+      html += '<span class="pioche__d pioche__d--trou" aria-hidden="true"></span>';
+    }
+  }
+  $("#pioche-rangee").innerHTML = html;
+  placerLaPioche();
+  $("#pioche-rangee").classList.toggle("pioche__rangee--actif", actif);
+  /* ⛔ PLUS DE LEGENDE SOUS LA RANGEE : on compte les pieces, elles sont
+     toutes la. Le nombre reste dans le `title` et dans l'etiquette de
+     lecture d'ecran, pour qui en a besoin. Ce qu'il y a a DIRE se dit dans
+     la barre d'etat, avec le reste du jeu, pas sous la pioche. */
+  var r = $("#pioche-rangee");
+  r.setAttribute("aria-label", reste ? ("La pioche, " + reste +
+    (reste > 1 ? " dominos" : " domino")) : "La pioche est vide");
+  r.setAttribute("title", actif ? "Choisis un domino" :
+    (reste ? (reste + (reste > 1 ? " dominos à piocher" : " domino à piocher")) : "La pioche est vide"));
+  e.classList.toggle("pioche--vide", reste === 0);
+}
+
+/* ═══ ON VOIT TOUJOURS QUI PIOCHE, ET QUELLE PIECE ═══════════════════════
+   Pierre, 20/09/2026 : « je veux que tous les joueurs, ordi ou pas ordi,
+   jouent et piochent leurs propres dominos de maniere visible comme
+   ludicash ». Deux choses en une : chacun pioche POUR LUI, et la pioche SE
+   VOIT. Le domino quitte SA case de la rangee et vole jusqu'a la place de
+   celui qui l'a pris, exactement pareil pour l'humain et pour l'ordinateur.
+
+   ⚠️ CE N'EST PAS DU DECOR. Avant, l'ordinateur piochait a l'interieur de sa
+   seconde de reflexion : la rangee perdait des cases sans que rien ne dise
+   qui les avait prises, et l'on croyait a un bug. Voir la piece partir, c'est
+   savoir combien de dominos a l'adversaire, et c'est une information de jeu. */
+function animerPioche(caseVoulue, joueur, apres){
+  var dep = $('#pioche-rangee [data-s="' + caseVoulue + '"]');
+  var nom = siegeDe(joueur);
+  var arr = (nom === "bas") ? $("#main") : (nom ? $("#siege-" + nom) : null);
+  if (!dep || !arr){ apres(); return; }
+  var a = dep.getBoundingClientRect(), b = arr.getBoundingClientRect();
+  var vol = document.createElement("div");
+  vol.className = "pioche__vol";
+  vol.style.left = a.left + "px";  vol.style.top = a.top + "px";
+  vol.style.width = a.width + "px"; vol.style.height = a.height + "px";
+  document.body.appendChild(vol);
+  var dx = Math.round(b.left + b.width / 2 - a.left - a.width / 2);
+  var dy = Math.round(b.top + b.height / 2 - a.top - a.height / 2);
+  requestAnimationFrame(function(){
+    vol.style.transform = "translate(" + dx + "px," + dy + "px) scale(.66)";
+    vol.style.opacity = ".15";
+  });
+  setTimeout(function(){
+    try { vol.parentNode.removeChild(vol); } catch (e) {}
+    apres();
+  }, 430);
+}
+
+/* ═══ ON VOIT AUSSI QUI POSE, ET D'OU ═════════════════════════════════════
+   Le pendant du vol de la pioche. `dessiner()` vient de rendre la chaine, la
+   piece neuve y porte deja `d--dernier` : on la masque un instant, on fait
+   voler sa copie depuis la place de celui qui joue, puis on la revele. Rien
+   n'est recalcule, donc la piece atterrit exactement ou la regle l'a mise.
+   ⚠️ LA COPIE EST LE VRAI DOMINO, FACE VISIBLE, pas un dos : on pose une
+   piece qu'on montre, on ne pioche pas une piece qu'on cache. */
+function animerPose(joueur, apres){
+  var cible = $("#chaine .d--dernier");
+  var nom = (joueur >= 0) ? siegeDe(joueur) : null;
+  var dep = (nom === "bas") ? $("#main") : (nom ? $("#siege-" + nom) : null);
+  if (!cible || !dep){ apres(); return; }
+  var b = cible.getBoundingClientRect(), a = dep.getBoundingClientRect();
+  if (!b.width || !a.width){ apres(); return; }
+
+  var vol = cible.cloneNode(true);
+  vol.className = cible.className + " pose__vol";
+  var x0 = Math.round(a.left + a.width / 2 - b.width / 2);
+  var y0 = Math.round(a.top + a.height / 2 - b.height / 2);
+  vol.style.left = x0 + "px";  vol.style.top = y0 + "px";
+  vol.style.width = b.width + "px"; vol.style.height = b.height + "px";
+  cible.style.visibility = "hidden";
+  document.body.appendChild(vol);
+  requestAnimationFrame(function(){
+    vol.style.transform = "translate(" + Math.round(b.left - x0) + "px," +
+                          Math.round(b.top - y0) + "px)";
+  });
+  setTimeout(function(){
+    try { vol.parentNode.removeChild(vol); } catch (e) {}
+    try { cible.style.visibility = ""; } catch (e) {}
+    apres();
+  }, 390);
+}
+
+/* La case que l'on vient de vider clignote une fois. */
+function marquerLeTrou(caseVoulue){
+  var t = $("#pioche-rangee").children[caseVoulue];
+  if (t) t.classList.add("pioche__d--neuf");
+}
+
+/* Les cases encore garnies, dans l'ordre de la rangee. */
+function casesGarnies(){ return (partie.talonRang || []).slice(); }
+
+/* L'ORDINATEUR PIOCHE POUR LUI, UNE PIECE A LA FOIS, ET ON LE VOIT. Il prend
+   une case au hasard : un joueur devant des pieces face cachee n'a aucune
+   raison de viser toujours le meme bout, et une rangee qui se viderait par la
+   droite se remarquerait. On rappelle la fonction apres chaque piece tant
+   qu'il est bloque, et l'on ne joue qu'ensuite. */
+function piocherPourLui(qui, apres){
+  if (!partie || partie.fini || partie.variante !== "pioche" ||
+      !partie.talon || !partie.talon.length ||
+      MOTEUR.coupsPossibles(partie.mains[qui], partie.plateau).length){
+    if (piocheOuverte){ piocheOuverte = false; dessinerPioche(); }
+    apres(); return;
+  }
+  var libres = casesGarnies();
+  if (!libres.length){ apres(); return; }
+  var s = libres[Math.floor(Math.random() * libres.length)];
+  /* LA RANGEE S'OUVRE POUR LUI. Elle doit exister a l'ecran avant le vol :
+     c'est de sa case que part le domino. */
+  piocheOuverte = true;
+  piocheur = qui;
+  dessinerPioche();
+  murmurer(qui, "Pioche");
+  animerPioche(s, qui, function(){
+    if (!partie || partie.fini || partie.tour !== qui){ apres(); return; }
+    MOTEUR.piocherIndex(partie, partie.talonRang.indexOf(s));
+    dessiner();
+    marquerLeTrou(s);
+    setTimeout(function(){
+      /* S'il peut jouer, la rangee se referme avant qu'il pose. */
+      if (MOTEUR.coupsPossibles(partie.mains[qui], partie.plateau).length ||
+          !partie.talon.length){ piocheOuverte = false; dessinerPioche(); }
+      piocherPourLui(qui, apres);
+    }, 240);
+  });
+}
+
+/* PIOCHER LA CASE QU'ON A TOUCHEE. Une seule piece par clic : si elle ne
+   debloque pas, on en touche une autre. C'est exactement le geste de
+   Ludicash, et c'est ce que l'ancienne boucle automatique volait au joueur. */
+function piocherLaCase(caseVoulue){
+  if (!doitPiocher()) return;
+  var rangs = partie.talonRang || [];
+  var i = rangs.indexOf(caseVoulue);
+  if (i < 0) return;
+  /* EN LIGNE, C'EST L'ARBITRE QUI PIOCHE. On fait voler la piece tout de
+     suite, pour que le geste reponde sous le doigt, et sa vue arrive pendant
+     le vol : la piece est deja dans la main quand il se termine. */
+  if (enLigne()){
+    piocheOuverte = true;
+    animerPioche(caseVoulue, monSiege(), function(){});
+    envoyerEnLigne({ t: "piocher", case: caseVoulue });
+    return;
+  }
+  /* ⚠️ LA RANGEE RESTE OUVERTE TANT QU'ON PIOCHE (Pierre, 20/09/2026 : « les
+     dominos disparaissent à chaque fois que tu en prends un ; ils
+     disparaissent quand tu as FINI de prendre »). Elle se fermait a chaque
+     clic, puis revenait : `doitPiocher()` est faux des que la table est
+     occupee, et c'est lui seul qui la tenait ouverte de mon cote. Elle
+     clignotait donc a chaque piece, et le domino ne volait meme pas,
+     puisqu'il partait d'une case qui venait de disparaitre.
+     `piocheOuverte` la tient maintenant du premier clic jusqu'a ce qu'on
+     puisse jouer ou que la pioche soit vide, exactement comme pour
+     l'ordinateur. */
+  piocheOuverte = true;
+  occupe = true; majBoutons();
+  animerPioche(caseVoulue, monSiege(), function(){
+    occupe = false;
+    var piece = MOTEUR.piocherIndex(partie, i);
+    if (!piece){ piocheOuverte = false; dessiner(); return; }
+    choisi = null;
+    var main = partie.mains[monSiege()];
+    var peut = MOTEUR.coupsPossibles(main, partie.plateau).length > 0;
+    /* ON NE LA FERME QU'A LA FIN DU GESTE. */
+    if (peut || !partie.talon.length) piocheOuverte = false;
+    dessiner();
+    marquerLeTrou(caseVoulue);
+    if (peut) dire("Tu as pioché le " + piece[0] + "-" + piece[1] + ". À toi de jouer.");
+    else if (partie.talon.length) dire("Le " + piece[0] + "-" + piece[1] + " ne te débloque pas. Pioche encore.");
+    else dire("Le " + piece[0] + "-" + piece[1] + " ne te débloque pas, et la pioche est vide : dis boudé.");
+  });
 }
 
 /* ═══════════════════════════════════════════════ PARTAGER SA VICTOIRE ═══
@@ -6199,7 +6662,9 @@ function majBoutons(){
   var monTour = partie.tour === moi && !partie.fini && !occupe && lienVivant();
   var coups = monTour
     ? MOTEUR.coupsAutorises(partie.mains[moi], partie.plateau, partie.aEngager) : [];
-  $("#boude").disabled = !(monTour && coups.length === 0);
+  /* ⚠️ ON NE BOUDE PAS QUAND LA PIOCHE A ENCORE DES PIECES : en domino
+     francais, tant qu'il reste une case dans la rangee, il faut piocher. */
+  $("#boude").disabled = !(monTour && coups.length === 0) || doitPiocher();
 
   var g = false, dr = false;
   if (monTour && choisi !== null){
@@ -6255,8 +6720,14 @@ function jouer(i, cote){
   choisi = null;
   arreterChrono();
   dessiner();
-  if (partie.fini){ finir(); return; }
-  suite();
+  /* TON DOMINO PART DE TA MAIN, comme celui des autres part de leur place :
+     le meme geste pour tout le monde. La table est tenue le temps du vol. */
+  occupe = true; majBoutons();
+  animerPose(monSiege(), function(){
+    occupe = false;
+    if (partie.fini){ finir(); return; }
+    suite();
+  });
 }
 
 function jouerBoude(){
@@ -6278,15 +6749,15 @@ function suite(){
   if (partie.tour === 0){
     occupe = false;
     var coups = MOTEUR.coupsPossibles(partie.mains[0], partie.plateau);
-    if (partie.variante === "pioche" && !coups.length && partie.talon.length){
-      MOTEUR.resoudreBlocage(partie);
-      dire("Tu as pioché jusqu'à pouvoir jouer.");
-      dessiner();
-      if (partie.fini){ finir(); return; }
-      if (partie.tour !== 0){ suite(); return; }
-      coups = MOTEUR.coupsPossibles(partie.mains[0], partie.plateau);
-    }
-    dire(coups.length ? "À toi de jouer." : "Tu ne peux pas jouer : dis boudé.");
+    /* ⛔ ON NE PIOCHE PLUS A SA PLACE (Pierre, 20/09/2026). Avant, le moteur
+       tirait tout seul en boucle jusqu'a ce qu'il puisse jouer, et lui
+       annoncait « Tu as pioché jusqu'à pouvoir jouer » : il subissait la
+       pioche au lieu de la faire, et ne voyait meme pas ce qui arrivait
+       dans sa main. C'est la rangee qui s'allume, et c'est lui qui designe. */
+    var aPiocher = (partie.variante === "pioche" && !coups.length && partie.talon.length);
+    dire(coups.length ? "À toi de jouer."
+       : (aPiocher ? "Tu ne peux pas jouer : choisis un domino dans la pioche."
+                   : "Tu ne peux pas jouer : dis boudé."));
     dessiner();
     lancerChrono();
     return;
@@ -6301,11 +6772,24 @@ function suite(){
        rejoindre une table en ligne, ou relancer une donne. On verifie donc
        que le monde n'a pas change avant de jouer a la place de quelqu'un. */
     if (enLigne() || !partie || partie.fini || partie.tour !== qui){ occupe = false; return; }
-    var fait = MOTEUR.jouerOrdinateur(partie);
-    if (fait && fait.boude) murmurer(qui, "Boudé !");
-    dessiner();
-    if (partie.fini){ occupe = false; finir(); return; }
-    suite();
+    /* IL PIOCHE D'ABORD, A VUE, PUIS IL JOUE. `jouerOrdinateur` sait resoudre
+       le blocage tout seul, mais en silence et d'un bloc : on lui retire donc
+       le travail en piochant ici, piece par piece, avec le vol. Quand on
+       l'appelle ensuite, il n'a plus rien a piocher et se contente de poser. */
+    piocherPourLui(qui, function(){
+      if (!partie || partie.fini || partie.tour !== qui){
+        occupe = false;
+        if (partie && partie.fini) finir();
+        return;
+      }
+      var fait = MOTEUR.jouerOrdinateur(partie);
+      if (fait && fait.boude) murmurer(qui, "Boudé !");
+      dessiner();
+      animerPose((fait && fait.piece) ? qui : -1, function(){
+        if (partie.fini){ occupe = false; finir(); return; }
+        suite();
+      });
+    });
   }, 850);
 }
 
@@ -6541,6 +7025,11 @@ function demarrer(){
     var hote = e.target.closest ? e.target.closest("[data-i]") : null;
     if (!hote) return;
     toucher(parseInt(hote.getAttribute("data-i"), 10));
+  });
+  $("#pioche-rangee").addEventListener("click", function(e){
+    var hote = e.target.closest ? e.target.closest("[data-s]") : null;
+    if (!hote) return;
+    piocherLaCase(parseInt(hote.getAttribute("data-s"), 10));
   });
   $("#poser-gauche").addEventListener("click", function(){ if (choisi !== null) jouer(choisi, "gauche"); });
   $("#poser-droite").addEventListener("click", function(){ if (choisi !== null) jouer(choisi, "droite"); });
