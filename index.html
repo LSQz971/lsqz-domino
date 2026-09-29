@@ -1122,6 +1122,12 @@ h1{
 .tournoi__bilan b{font-size:20px;font-weight:800;color:#ffd666}
 .tournoi__partager{
   display:block;width:100%;margin-top:10px;background:#25D366;color:#062011;
+  /* ⚠️ IL AVAIT SA COULEUR MAIS PAS SA FORME (mesure du 29/09/2026) : faute
+     de regle generique sur les <button> au domino, il gardait la bordure en
+     relief et les coins carres du navigateur, et il sortait en rectangle a
+     lisere clair au milieu de boutons arrondis. */
+  font:inherit;font-size:14px;font-weight:700;padding:11px;
+  border:0;border-radius:11px;cursor:pointer;
 }
 .tournoi__wa{
   display:block;text-align:center;padding:10px;border-radius:10px;font-size:14px;
@@ -1270,6 +1276,21 @@ h1{
 .tournoi__retour span{font-size:18px;line-height:1;opacity:.8}
 .tournoi__reste{font-size:11.5px;opacity:.75}
 .tournoi__pieds{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+/* ⚠️ LE DOMINO N'A AUCUNE REGLE GENERIQUE POUR UN <button> NU, contrairement a
+   Ti Point Ti Croix qui en porte une. Un bouton sans classe sort donc ici en
+   GRIS SYSTEME, coins carres et bordure outset, sur le fond vert de la boite :
+   constate le 29/09/2026 en mesurant le style calcule. Cette classe porte l'or
+   plein, mesure pour mesure celui de Ti Point Ti Croix (#F0C64B, encre #2A1D00,
+   graisse 800, 11px 22px, rayon 10px), pour que le bouton principal d'un ecran
+   se lise pareil dans les deux jeux. */
+.tournoi__plein{
+  font:inherit;font-size:13px;font-weight:800;padding:11px 22px;border-radius:10px;
+  border:0;background:var(--or);color:#2A1D00;cursor:pointer;
+}
+.tournoi__plein:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:2px}
+/* La version compacte, pour un bouton qui vit a cote d'un champ et non sur
+   toute la largeur, comme « Copier » a cote du lien du tournoi. */
+.tournoi__plein--petit{font-size:13px;padding:8px 13px;border-radius:9px}
 .tournoi__rappel{border-top:1px dashed rgba(255,255,255,.18);margin-top:4px}
 .tournoi__vide{font-size:13px;opacity:.7;padding:10px 2px;line-height:1.5}
 
@@ -1765,7 +1786,7 @@ h1{
         <a class="tournoi__wa" id="tr-v-wa" target="_blank" rel="noopener">Inviter sur WhatsApp</a>
         <div class="tournoi__partage" style="margin-top:6px">
           <input id="tr-v-url" type="text" readonly aria-label="Le lien de ton tournoi">
-          <button id="tr-v-copier" type="button">Copier</button>
+          <button class="tournoi__plein tournoi__plein--petit" id="tr-v-copier" type="button">Copier</button>
         </div>
       </div>
 
@@ -1780,7 +1801,7 @@ h1{
            un mardi a tout autant envie de le dire. -->
       <button class="tournoi__partager" id="tr-v-partager" type="button" hidden>Partager mon résultat</button>
 
-      <button id="tr-v-lancer" type="button" hidden style="margin-top:10px;width:100%">Lancer le tournoi</button>
+      <button class="tournoi__plein" id="tr-v-lancer" type="button" hidden style="margin-top:10px;width:100%">Lancer le tournoi</button>
       <!-- IL Y A TOUJOURS QUELQU'UN QUI S'INSCRIT ET QUI NE JOUE JAMAIS. Sans
            ce bouton, son silence garderait le classement en suspens pour tous
            les autres. Il n'existe que pour le tournoi an fanmi : les deux
@@ -1853,7 +1874,7 @@ h1{
           </select>
         </label>
       </div>
-      <button id="tr-creer" type="button" style="margin-top:10px;width:100%">Créer et partager le lien</button>
+      <button class="tournoi__plein" id="tr-creer" type="button" style="margin-top:10px;width:100%">Créer et partager le lien</button>
     </div>
 
     <!-- LES TROIS SORTIES, ET IL LES FAUT TOUTES LES TROIS (Pierre,
@@ -1862,6 +1883,15 @@ h1{
          « Quitter le tournoi » sort vraiment du tournoi en cours, efface son
          lien de l'adresse et rend les menus du jeu. -->
     <div class="tournoi__pieds">
+      <!-- ⚠️ LES DEUX PORTES SUR L'ÉCRAN DE SORTIE (Pierre, 29/09/2026 : « sur ce
+           panneau au domino il faut aussi un bouton qui permet de revenir au
+           tournoi, comme pour le ti point ti croix »). Ti Point Ti Croix l'avait
+           depuis le 11/09/2026, le domino ne l'a jamais eu : on quittait, on
+           lisait son rang, et pour y retourner il fallait refaire tout le chemin
+           par la liste des trois tournois. Quitter est une décision de la PAGE :
+           l'inscription, elle, vit sur l'arbitre et n'a pas bougé, donc ce bouton
+           remet le joueur dedans d'un seul doigt. -->
+      <button class="tournoi__plein" id="tr-reprendre" type="button" hidden>Retourner dans le tournoi</button>
       <button class="bouton--pale" id="tr-quitter" type="button" hidden>Quitter le tournoi</button>
       <button class="bouton--pale" id="tr-fermer" type="button">Fermer</button>
     </div>
@@ -4216,6 +4246,7 @@ function fermerTournoi(){
   $("#tr-fermer").hidden = false;
   $("#tr-fermer").textContent = "Fermer";
   $("#tr-retour").hidden = false;
+  $("#tr-reprendre").hidden = true;
   clearInterval(sondage); sondage = null;
   /* On vient de lire son classement de sortie : c'est maintenant que la
      question se pose, pas par-dessus le tableau. */
@@ -4224,6 +4255,39 @@ function fermerTournoi(){
     formulaireEnAttente = null;
     if (TALLY && !etat.forme) setTimeout(function(){ ouvrirFormulaire(r); }, 260);
   }
+}
+
+/* LE CHEMIN DU RETOUR, juste apres la sortie (Pierre, 29/09/2026 : « sur ce
+   panneau au domino il faut aussi un bouton qui permet de revenir au tournoi,
+   comme pour le ti point ti croix »). Quitter n'efface rien chez l'arbitre :
+   la place, les parties jouees et le rang y restent, c'est la page seule qui
+   avait lache le tournoi. Revenir ne coute donc qu'une relecture de la vue, et
+   l'on retrouve tout ou on l'avait laisse.
+   ⚠️ ON NE REVERROUILLE PAS LES MENUS ICI, et c'est la seule difference avec
+   Ti Point Ti Croix : au domino la table et les regles ne se figent qu'au
+   moment de JOUER une partie de tournoi (jouerMaPartie). Revenir lire un
+   classement n'est pas jouer ; afficherTournoi repose tout le reste, la ligne
+   du nom, la barre du tournoi et le souvenir du tournoi ouvert. */
+function retournerDansLeTournoi(){
+  var code = dernierTournoi && dernierTournoi.code;
+  if (!code || !SERVEUR) return;
+  var b = $("#tr-reprendre");
+  b.disabled = true;
+  fetch(SERVEUR + "/tournoi/" + code + "?jeton=" + encodeURIComponent(monJeton()))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      b.disabled = false;
+      var vue = d && d.vue;
+      if (!vue){ $("#tr-v-journal").textContent = "Ce tournoi ne répond plus."; return; }
+      dernierTournoi = null;
+      $("#tr-retour").hidden = false;
+      $("#tr-fermer").textContent = "Fermer";
+      afficherTournoi(vue);
+      armerLeSondage();
+      direQuiJeSuis();
+      dire("Te revoilà dans " + vue.nom + ".");
+    })
+    .catch(function(){ b.disabled = false; dire("Le serveur ne répond pas."); });
 }
 
 /* SORTIE 2 : ON QUITTE VRAIMENT LE TOURNOI EN COURS (Pierre, 11/09/2026 :
@@ -4280,6 +4344,7 @@ function quitterLeTournoi(){
     $("#tr-vivant").hidden = false;
     $("#tr-retour").hidden = true;       /* il vient de sortir, il n'y revient pas */
     $("#tr-quitter").hidden = true;      /* c'est fait */
+    $("#tr-reprendre").hidden = false;   /* et l'on peut y retourner */
     $("#tr-v-lancer").hidden = true;
     $("#tr-v-clore").hidden = true;
     $("#tr-v-partage").hidden = true;
@@ -4448,6 +4513,7 @@ function montrerLAccueil(){
   $("#tr-neuf").hidden = true;
   $("#tr-classements").hidden = true;
   $("#tr-quitter").hidden = true;
+  $("#tr-reprendre").hidden = true;
   /* SUR L'ACCUEIL, CE BOUTON EST LA SEULE SORTIE de la boîte : ni croix, ni
      clic sur le fond. Il se montre donc toujours, et il dit « Fermer », parce
      qu'une table, à ce moment-là, on n'en a pas forcément une. */
@@ -4721,6 +4787,8 @@ function montrerLesClassements(){
   $("#tr-neuf").hidden = true;
   $("#tr-classements").hidden = false;
   $("#tr-quitter").hidden = true;
+  /* il reparaitra au retour : etatDesBoutons l'a deja mis de cote */
+  $("#tr-reprendre").hidden = true;
   $("#tr-fermer").hidden = false;
   $("#tr-fermer").textContent = "Fermer";
   dessinerLesClassements();
@@ -4860,6 +4928,7 @@ function afficherTournoi(vue){
   $("#tr-classements").hidden = true;
   $("#tr-vivant").hidden = false;
   $("#tr-quitter").hidden = false;
+  $("#tr-reprendre").hidden = true;   /* on y est deja */
   barreDuTournoi(true);
   /* ⚠️ PLUS DE « REVENIR À MA TABLE » SUR CET ÉCRAN (Pierre, 11/09/2026 :
      « le bouton revenir à ma table est inutile puisque je n'ai pas encore de
@@ -5436,6 +5505,7 @@ function brancherLesTournois(){
   $("#tournoi-ouvrir").addEventListener("click", ouvrirTournoi);
   $("#tr-fermer").addEventListener("click", fermerTournoi);
   $("#tr-quitter").addEventListener("click", quitterLeTournoi);
+  $("#tr-reprendre").addEventListener("click", retournerDansLeTournoi);
   $("#quitter-tournoi").addEventListener("click", quitterLeTournoi);
   /* LA LIGNE DU NOM RAMÈNE AU CLASSEMENT. Elle ne paraît qu'en tournoi, donc
      elle n'a qu'un seul sens possible, et elle remplace la porte d'entrée que
